@@ -60,7 +60,7 @@ public:
 
   void updateCallback(const ros::WallTimerEvent& event)
   {
-    udp::endpoint receiver_endpoint = udp::endpoint(udp::v4(), 5048);
+    udp::endpoint receiver_endpoint = udp::endpoint(boost::asio::ip::address::from_string("10.42.0.8"), 5048);
     try
     {
       boost::array<char, 1> send_buf  = {{ 0 }};
@@ -84,10 +84,11 @@ private:
   }
 
   void handle_receive(const boost::system::error_code& error,
-    std::size_t /* bytes transferred */ )
+    std::size_t bytes_transferred)
   {
     if (!error || error == boost::asio::error::message_size)
     {
+      recv_buffer_[bytes_transferred] = 0; // tiny hack
       std::string data(recv_buffer_.begin(), recv_buffer_.end());
       //ROS_INFO("receive updates");
       ROS_INFO("%s", data.c_str());
