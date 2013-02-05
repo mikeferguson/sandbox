@@ -1,0 +1,15 @@
+<package>
+  <name>asio_ros</name>
+  <version>0.1.0</version>
+  <description>
+    experiments with boost asio
+  </description>
+  <author>Michael Ferguson</author>
+  <maintainer email="mfergs7@gmail.com">Michael Ferguson</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/asio_ros</url>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <run_depend>roscpp</run_depend>
+</package>
