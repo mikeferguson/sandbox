@@ -27,6 +27,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/* 
+ * based on http://www.boost.org/doc/libs/1_53_0/doc/html/boost_asio/tutorial.html
+ */
+
 #include <ros/ros.h>
 
 #include <iostream>
