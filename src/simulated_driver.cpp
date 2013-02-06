@@ -29,6 +29,7 @@
 
 /* 
  * based on http://www.boost.org/doc/libs/1_53_0/doc/html/boost_asio/tutorial.html
+ *      and http://www.boost.org/doc/libs/1_53_0/doc/html/boost_asio/tutorial/tuttimer3.html
  */
 
 #include <ros/ros.h>
@@ -37,6 +38,7 @@
 #include <string>
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <std_msgs/Int32.h>
 
@@ -47,19 +49,23 @@ class udp_driver
 public:
   udp_driver(boost::asio::io_service& io_service,
              ros::NodeHandle nh)
-    : socket_(io_service)
+    : socket_(io_service),
+      milliseconds_(10),
+      timer_(io_service, boost::posix_time::milliseconds(milliseconds_))
   {
-    timer_ = nh.createWallTimer(ros::WallDuration(0.01), 
-                   boost::bind(&udp_driver::updateCallback, this, _1));
+    timer_.async_wait(boost::bind(&udp_driver::updateCallback, this, _1));
+
     pub_ = nh.advertise<std_msgs::Int32>("count", 1);
     count_ = 0;
 
+    // any socket will do
     socket_.open(udp::v4());
     start_receive();
   }
 
-  void updateCallback(const ros::WallTimerEvent& event)
+  void updateCallback(const boost::system::error_code& /*e*/)
   {
+    // kick the hardware to send some stuff back
     udp::endpoint receiver_endpoint = udp::endpoint(boost::asio::ip::address::from_string("10.42.0.8"), 5048);
     try
     {
@@ -70,7 +76,11 @@ public:
     {
       std::cerr << e.what() << std::endl;
     }
-    ROS_INFO("send commands");
+    ROS_INFO("sent commands");
+
+    // need to set a new expiration time before calling async_wait again
+    timer_.expires_at(timer_.expires_at() + boost::posix_time::milliseconds(milliseconds_));
+    timer_.async_wait(boost::bind(&udp_driver::updateCallback, this, _1));
   }
 
 private:
@@ -86,11 +96,11 @@ private:
   void handle_receive(const boost::system::error_code& error,
     std::size_t bytes_transferred)
   {
+    // This catches all the data, just print it for demo
     if (!error || error == boost::asio::error::message_size)
     {
       recv_buffer_[bytes_transferred] = 0; // tiny hack
       std::string data(recv_buffer_.begin(), recv_buffer_.end());
-      //ROS_INFO("receive updates");
       ROS_INFO("%s", data.c_str());
       if(ros::ok())
         start_receive();
@@ -99,6 +109,9 @@ private:
       msg.data = count_;
       pub_.publish(msg);
     }
+
+    // ROS catches the ctrl-c, but we need to stop the io_service to exit
+    //   now works after switching to a boost timer
     if(!ros::ok())
       socket_.get_io_service().stop();
   }
@@ -106,7 +119,12 @@ private:
   udp::socket socket_;
   udp::endpoint remote_endpoint_;
   boost::array<char, 255> recv_buffer_;
-  ros::WallTimer timer_;
+
+  // 100hz/1khz timer for sending new data request
+  long milliseconds_;
+  boost::asio::deadline_timer timer_;
+
+  // publish number of message received
   ros::Publisher pub_;
   int count_;
 };
@@ -118,12 +136,15 @@ int main(int argc, char **argv)
   ros::NodeHandle nh_("~");
   try
   {
+    // io_service and "driver" class do all the heavy lifting
     boost::asio::io_service io_service;
     udp_driver driver(io_service, nh);
 
+    // for ROS_INFO, pub, subs...
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
+    // will block here until the end
     io_service.run();
   }
   catch (std::exception& e)
