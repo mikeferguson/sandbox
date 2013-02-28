@@ -1,0 +1,13 @@
+<package>
+  <name>vanadium_maps</name>
+  <version>0.1.0</version>
+  <description>
+    Various maps.
+  </description>
+  <author>Michael Ferguson</author>
+  <maintainer email="mike@vanadiumlabs.com">Michael Ferguson</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/vanadium_maps</url>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
