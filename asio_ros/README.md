@@ -1,5 +1,5 @@
 ## Boost ASIO + ROS Sandbox
-use at your own risk...
+This is a simple prototype of using boost::asio + ROS for ethernet connected devices. Use at your own risk...
 
 ## Notes
 
