@@ -1,0 +1,25 @@
+<package>
+  <name>simple_grasping</name>
+  <version>0.1.0</version>
+  <description>
+    Simple tools for grasping of objects.
+  </description>
+  <author>Michael Ferguson</author>
+  <maintainer email="mike@vanadiumlabs.com">Michael Ferguson</maintainer>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/simple_grasping</url>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>tf</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>manipulation_msgs</build_depend>
+
+  <run_depend>tf</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>manipulation_msgs</run_depend>
+</package>
