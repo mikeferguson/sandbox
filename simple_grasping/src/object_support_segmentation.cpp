@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2013, Michael E. Ferguson
  * All Rights Reserved
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -12,7 +12,7 @@
  *       documentation and/or other materials provided with the distribution.
  *     * The names of the authors may not be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -49,7 +49,7 @@ public:
         ros::NodeHandle nh ("~");
 
         // frame_id: frame to transform cloud to (should be XY horizontal)
-        frame_ = "odom";
+        frame_ = "base_link";
         nh.getParam("frame_id", frame_);
 
         // use_debug: enable/disable output of a cloud containing object points
@@ -80,7 +80,7 @@ public:
         segment_.setDistanceThreshold (0.01);
 
         // clouds and objects
-        cloud_sub_ = nh_.subscribe< pcl::PointCloud<pcl::PointXYZRGB> >("/camera/depth_registered/points",
+        cloud_sub_ = nh_.subscribe< pcl::PointCloud<pcl::PointXYZRGB> >("/head_camera/depth_registered/points",
                                                                         1,
                                                                         &ObjectSupportSegmention::cloudCallback,
                                                                         this);
@@ -149,7 +149,7 @@ public:
         extract_indices_.setInputCloud(cloud_filtered2);
         manipulation_msgs::GraspableObjectList object_list;
         if(debug_)
-            output.header.frame_id = cloud_transformed->header.frame_id; 
+            output.header.frame_id = cloud_transformed->header.frame_id;
         for(size_t i= 0; i < clusters.size(); i++)
         {
             manipulation_msgs::GraspableObject object;
@@ -164,7 +164,7 @@ public:
             if(debug_)
             {
                 ROS_INFO("Adding cluster of size %d.", (int) new_cloud.points.size());
-                std::vector<sensor_msgs::PointField> fields;
+                std::vector<pcl::PCLPointField> fields;
                 pcl::getFields(new_cloud, fields);
                 size_t idx;
                 for (idx = 0; idx < fields.size(); idx++)
@@ -248,10 +248,9 @@ private:
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "object_support_segmention");
+    ros::init(argc, argv, "object_support_segmentation");
     ros::NodeHandle n;
     ObjectSupportSegmention segmention(n);
     ros::spin();
     return 0;
 }
-
