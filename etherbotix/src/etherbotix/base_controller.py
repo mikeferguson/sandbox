@@ -44,11 +44,11 @@ class BaseController():
 
         # the last time a command was received
         self.last_cmd_vel_time = rospy.Time.now()
-        self.timeout = rospy.get_param('~cmd_vel_timeout',0.5)
+        self.timeout = rospy.get_param('~cmd_vel_timeout', 0.25)
 
-        # base parameters
-        self.ticks_meter = float(rospy.get_param('~ticks_meter', 265872))
-        self.base_width = float(rospy.get_param('~base_width', 0.381))
+        # base parameters: wheels are 5.7" = 0.14478m * pi, 64*100 cpr
+        self.ticks_meter = float(rospy.get_param('~ticks_meter', 14070))
+        self.base_width = float(rospy.get_param('~base_width', 0.25))
         self.accel_limit = 5
 
         # links for odometry publication
@@ -76,9 +76,8 @@ class BaseController():
     def cmd_vel_cb(self, msg):
         """ Handle movement requests. """
         self.last_cmd_vel_time = rospy.Time.now()
-        self.left_setpoint = -int( ((msg.linear.x - (msg.angular.z * self.base_width/2.0)) * self.ticks_meter) / 1000.0)
-        self.right_setpoint = int( ((msg.linear.x + (msg.angular.z * self.base_width/2.0)) * self.ticks_meter) / 1000.0)
-        print("set " + str(self.left_setpoint))
+        self.left_setpoint = -int( ((msg.linear.x - (msg.angular.z * self.base_width/2.0)) * self.ticks_meter) / 100.0)
+        self.right_setpoint = int( ((msg.linear.x + (msg.angular.z * self.base_width/2.0)) * self.ticks_meter) / 100.0)
 
     def update_odometry(self):
         """ Update odometry using the left and right encoder values. """
@@ -87,8 +86,6 @@ class BaseController():
         elapsed = now - self.then
         self.then = now
         elapsed = elapsed.to_sec()
-
-        print("get " + str(self.device.lm_encoder))
 
         # calculate distance traveled
         if self.last_systime == None or self.device.system_time < self.last_systime:
@@ -113,8 +110,8 @@ class BaseController():
             self.th = self.th + th
 
         # calculate base velocity
-        dx = (self.device.lm_velocity+self.device.rm_velocity)/(2*self.ticks_meter) * 1000.
-        dr = (self.device.rm_velocity-self.device.lm_velocity)/(self.ticks_meter)/self.base_width * 1000
+        dx = (self.device.lm_velocity+self.device.rm_velocity)/(2*self.ticks_meter) * 100.
+        dr = (self.device.rm_velocity-self.device.lm_velocity)/(self.ticks_meter)/self.base_width * 100
 
         # publish or perish?
         quaternion = Quaternion()

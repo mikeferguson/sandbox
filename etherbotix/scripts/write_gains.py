@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from etherbotix import *
+from etherbotix.etherbotix import *
 
 def set_gain(name, gain, shift, eth):
     if name == 'lkp':
