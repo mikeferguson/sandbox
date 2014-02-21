@@ -31,6 +31,7 @@ import rospy
 
 from etherbotix.etherbotix import *
 from etherbotix.base_controller import *
+from etherbotix.gps_publisher import *
 
 class EtherbotixNode:
 
@@ -42,6 +43,11 @@ class EtherbotixNode:
 
         # base control
         self.base = BaseController(self.board)
+
+        # gps publishing in the background?
+        if rospy.get_param('~publish_gps_strings', False):
+            self.gps = GPS()
+            self.gps.start()
 
         rospy.loginfo("Done initializing.")
 

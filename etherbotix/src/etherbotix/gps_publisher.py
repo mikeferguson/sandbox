@@ -2,16 +2,18 @@
 
 import socket
 import time
+from threading import Thread
 
 import rospy
 from nmea_msgs.msg import Sentence
 
-class GPS:
+class GPS(Thread):
 
     # turrible hacks
     MAGIC = chr(255) + 'BOT'
 
     def __init__(self, ip="192.168.0.41", port=6707):
+        Thread.__init__(self)
         self._ip = ip
         self._port = port
         self._conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
