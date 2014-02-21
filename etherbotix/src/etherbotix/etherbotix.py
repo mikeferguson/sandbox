@@ -21,19 +21,30 @@ class EtherBotiX:
     ADDR_LM_CURRENT = 0x3C
     ADDR_RM_CURRENT = 0x3E
 
-    ADDR_LM_KP_GAIN = 0x40
-    ADDR_LM_KP_SHIFT = 0x41
-    ADDR_LM_KI_GAIN = 0x42
-    ADDR_LM_KI_SHIFT = 0x43
-    ADDR_LM_KD_GAIN = 0x44
-    ADDR_LM_KD_SHIFT = 0x45
+    ADDR_ACC_X = 0x40
+    ADDR_ACC_Y = 0x42
+    ADDR_ACC_Z = 0x44
+    ADDR_GYRO_X = 0x46
+    ADDR_GYRO_Y = 0x48
+    ADDR_GYRO_Z = 0x4A
+    ADDR_MAG_X = 0x4C
+    ADDR_MAG_Y = 0x4E
 
-    ADDR_RM_KP_GAIN = 0x48
-    ADDR_RM_KP_SHIFT = 0x49
-    ADDR_RM_KI_GAIN = 0x4A
-    ADDR_RM_KI_SHIFT = 0x4B
-    ADDR_RM_KD_GAIN = 0x4C
-    ADDR_RM_KD_SHIFT = 0x4D
+    ADDR_MAG_Z = 0x50
+
+    ADDR_LM_KP_GAIN = 0x52
+    ADDR_LM_KP_SHIFT = 0x53
+    ADDR_LM_KI_GAIN = 0x54
+    ADDR_LM_KI_SHIFT = 0x55
+    ADDR_LM_KD_GAIN = 0x56
+    ADDR_LM_KD_SHIFT = 0x57
+
+    ADDR_RM_KP_GAIN = 0x58
+    ADDR_RM_KP_SHIFT = 0x59
+    ADDR_RM_KI_GAIN = 0x5A
+    ADDR_RM_KI_SHIFT = 0x5B
+    ADDR_RM_KD_GAIN = 0x5C
+    ADDR_RM_KD_SHIFT = 0x5D
 
     # turrible hacks
     MAGIC = chr(255) + 'BOT'
@@ -63,6 +74,16 @@ class EtherBotiX:
         self.lm_current = 0
         self.rm_current = 0
 
+        self.acc_x = 0
+        self.acc_y = 0
+        self.acc_z = 0
+        self.gyro_x = 0
+        self.gyro_y = 0
+        self.gyro_z = 0
+        self.mag_x = 0
+        self.mag_y = 0
+        self.mag_z = 0
+
     ###################################
     ## Socket Functions
 
@@ -90,6 +111,16 @@ class EtherBotiX:
                 self.rm_encoder = self.attempt_get(self.rm_encoder, self.ADDR_RM_ENCODER, 4, p_addr, p_len, data, self.SIGNED)
                 self.lm_velocity = -self.attempt_get(self.lm_velocity, self.ADDR_LM_VELOCITY, 2, p_addr, p_len, data, self.SIGNED)
                 self.rm_velocity = self.attempt_get(self.rm_velocity, self.ADDR_RM_VELOCITY, 2, p_addr, p_len, data, self.SIGNED)
+
+                self.acc_x = self.attempt_get(self.acc_x, self.ADDR_ACC_X, 2, p_addr, p_len, data, self.SIGNED)
+                self.acc_y = self.attempt_get(self.acc_y, self.ADDR_ACC_Y, 2, p_addr, p_len, data, self.SIGNED)
+                self.acc_z = self.attempt_get(self.acc_z, self.ADDR_ACC_Z, 2, p_addr, p_len, data, self.SIGNED)
+                self.gyro_x = self.attempt_get(self.gyro_x, self.ADDR_GYRO_X, 2, p_addr, p_len, data, self.SIGNED)
+                self.gyro_y = self.attempt_get(self.gyro_y, self.ADDR_GYRO_Y, 2, p_addr, p_len, data, self.SIGNED)
+                self.gyro_z = self.attempt_get(self.gyro_z, self.ADDR_GYRO_Z, 2, p_addr, p_len, data, self.SIGNED)
+                self.mag_x = self.attempt_get(self.mag_x, self.ADDR_MAG_X, 2, p_addr, p_len, data, self.SIGNED)
+                self.mag_y = self.attempt_get(self.mag_y, self.ADDR_MAG_Y, 2, p_addr, p_len, data, self.SIGNED)
+                self.mag_z = self.attempt_get(self.mag_z, self.ADDR_MAG_Z, 2, p_addr, p_len, data, self.SIGNED)
                 pkts += 1
         except:
             pass

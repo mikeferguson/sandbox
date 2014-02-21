@@ -5,7 +5,7 @@ from etherbotix.etherbotix import *
 
 if __name__ == "__main__":
     e = EtherBotiX()
-    e.send(0, [0,0x40])
+    e.send(0, [0, 0x60])
     time.sleep(.1)
     e.recv()
 
