@@ -2,7 +2,7 @@
 
 """
   diff_controller.py - controller for a differential drive
-  Copyright (c) 2010-2011 Vanadium Labs LLC.  All right reserved.
+  Copyright (c) 2010-2014 Vanadium Labs LLC.  All right reserved.
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
@@ -11,10 +11,10 @@
       * Redistributions in binary form must reproduce the above copyright
         notice, this list of conditions and the following disclaimer in the
         documentation and/or other materials provided with the distribution.
-      * Neither the name of Vanadium Labs LLC nor the names of its 
-        contributors may be used to endorse or promote products derived 
+      * Neither the name of Vanadium Labs LLC nor the names of its
+        contributors may be used to endorse or promote products derived
         from this software without specific prior written permission.
-  
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -37,7 +37,7 @@ from nav_msgs.msg import Odometry
 from tf.broadcaster import TransformBroadcaster
 
 class BaseController():
-    """ Controller to handle movement & odometry feedback for a differential 
+    """ Controller to handle movement & odometry feedback for a differential
             drive mobile base. """
     def __init__(self, device):
         self.device = device
@@ -54,7 +54,7 @@ class BaseController():
         # links for odometry publication
         self.base_frame_id = rospy.get_param('~base_frame_id', 'base_link')
         self.odom_frame_id = rospy.get_param('~odom_frame_id', 'odom')
-        
+
         # internal data
         self.left_last_cmd = 0          # last command sent
         self.right_last_cmd = 0
@@ -71,7 +71,9 @@ class BaseController():
         # ROS interface
         rospy.Subscriber('cmd_vel', Twist, self.cmd_vel_cb)
         self.odomPub = rospy.Publisher("odom",Odometry)
-        self.odomBroadcaster = TransformBroadcaster()
+        self.odomBroadcaster = None
+        if rospy.get_param('~publish_tf', True):
+            self.odomBroadcaster = TransformBroadcaster()
 
     def cmd_vel_cb(self, msg):
         """ Handle movement requests. """
@@ -115,17 +117,18 @@ class BaseController():
 
         # publish or perish?
         quaternion = Quaternion()
-        quaternion.x = 0.0 
+        quaternion.x = 0.0
         quaternion.y = 0.0
         quaternion.z = sin(self.th/2)
         quaternion.w = cos(self.th/2)
-        self.odomBroadcaster.sendTransform(
-            (self.x, self.y, 0), 
-            (quaternion.x, quaternion.y, quaternion.z, quaternion.w),
-            rospy.Time.now(),
-            self.base_frame_id,
-            self.odom_frame_id
-            )
+        if self.odomBroadcaster:
+            self.odomBroadcaster.sendTransform(
+                (self.x, self.y, 0),
+                (quaternion.x, quaternion.y, quaternion.z, quaternion.w),
+                rospy.Time.now(),
+                self.base_frame_id,
+                self.odom_frame_id
+                )
 
         odom = Odometry()
         odom.header.frame_id = self.odom_frame_id
