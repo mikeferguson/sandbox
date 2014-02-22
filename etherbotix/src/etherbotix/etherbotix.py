@@ -38,13 +38,15 @@ class EtherBotiX:
     ADDR_LM_KI_SHIFT = 0x55
     ADDR_LM_KD_GAIN = 0x56
     ADDR_LM_KD_SHIFT = 0x57
+    ADDR_LM_KI_WINDUP = 0x58
 
-    ADDR_RM_KP_GAIN = 0x58
-    ADDR_RM_KP_SHIFT = 0x59
-    ADDR_RM_KI_GAIN = 0x5A
-    ADDR_RM_KI_SHIFT = 0x5B
-    ADDR_RM_KD_GAIN = 0x5C
-    ADDR_RM_KD_SHIFT = 0x5D
+    ADDR_RM_KP_GAIN = 0x59
+    ADDR_RM_KP_SHIFT = 0x5A
+    ADDR_RM_KI_GAIN = 0x5B
+    ADDR_RM_KI_SHIFT = 0x5C
+    ADDR_RM_KD_GAIN = 0x5D
+    ADDR_RM_KD_SHIFT = 0x5E
+    ADDR_RM_KI_WINDUP = 0x5F
 
     # turrible hacks
     MAGIC = chr(255) + 'BOT'
