@@ -69,7 +69,7 @@ class BaseController():
         self.then = rospy.Time.now()    # time for determining dx/dy
 
         # ROS interface
-        rospy.Subscriber('cmd_vel', Twist, self.cmd_vel_cb)
+        rospy.Subscriber('base_controller/command', Twist, self.cmd_vel_cb)
         self.odomPub = rospy.Publisher("odom",Odometry)
         self.odomBroadcaster = None
         if rospy.get_param('~publish_tf', True):
