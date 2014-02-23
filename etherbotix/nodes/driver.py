@@ -32,6 +32,7 @@ import rospy
 from etherbotix.etherbotix import *
 from etherbotix.base_controller import *
 from etherbotix.gps_publisher import *
+from etherbotix.imu_publisher import *
 
 class EtherbotixNode:
 
@@ -49,19 +50,23 @@ class EtherbotixNode:
             self.gps = GPS()
             self.gps.start()
 
+        # publish imu
+        self.imu = ImuPublisher()
+
         rospy.loginfo("Done initializing.")
 
     def run(self):
         r = rospy.Rate(self.rate)
 
         while not rospy.is_shutdown():
-            self.board.send(0, [0,0x40])
+            self.board.send(0, [0,0x60])
 
             if self.board.recv() > 0:
                 # update base (and publish odometry)
                 self.base.update_odometry()
 
             self.base.update()
+            self.imu.publish(self.board)
 
             r.sleep()
 
