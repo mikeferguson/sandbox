@@ -30,8 +30,8 @@ class GPS(Thread):
             raw_s = self.recv()
             if raw_s:
                 s = Sentence()
-                # TODO: s.header
-                s.sentence = raw_s
+                s.header.stamp = rospy.Time.now()
+                s.sentence = raw_s.rstrip()
                 self._pub.publish(s)
 
     def recv(self):
