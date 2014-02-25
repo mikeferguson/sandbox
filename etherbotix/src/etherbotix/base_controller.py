@@ -46,9 +46,9 @@ class BaseController():
         self.last_cmd_vel_time = rospy.Time.now()
         self.timeout = rospy.get_param('~cmd_vel_timeout', 0.25)
 
-        # base parameters: wheels are 5.7" = 0.14478m * pi, 64*100 cpr
-        self.ticks_meter = float(rospy.get_param('~ticks_meter', 14070))
-        self.base_width = float(rospy.get_param('~base_width', 0.25))
+        # base parameters: wheels are 4.7" = 0.3748m * pi, 64*100 cpr
+        self.ticks_meter = float(rospy.get_param('~ticks_meter', 17073))
+        self.base_width = float(rospy.get_param('~base_width', 0.109375)) # TODO: this number doesn't make physical sense...
         self.accel_limit = 5
 
         # links for odometry publication
