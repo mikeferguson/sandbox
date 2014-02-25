@@ -26,9 +26,10 @@ class ImuPublisher:
 
         # L3GD20 Gyro
         # 70mdps/digit
-        msg.angular_velocity.x = -etherbotix.gyro_y * 0.001221111
-        msg.angular_velocity.y = -etherbotix.gyro_x * 0.001221111
-        msg.angular_velocity.z = -etherbotix.gyro_z * 0.001221111
+        # TODO: figure out why the 7/8 fudge factor is needed here...
+        msg.angular_velocity.x = -etherbotix.gyro_y * 0.001221111 * 0.875
+        msg.angular_velocity.y = -etherbotix.gyro_x * 0.001221111 * 0.875
+        msg.angular_velocity.z = etherbotix.gyro_z * 0.001221111 * 0.875
         # 0.2% Non Linearityx, 2000dps
         msg.angular_velocity_covariance[0] = 0.004868938
         msg.angular_velocity_covariance[4] = 0.004868938
