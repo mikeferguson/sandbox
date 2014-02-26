@@ -137,10 +137,17 @@ class BaseController():
         odom.pose.pose.position.y = self.y
         odom.pose.pose.position.z = 0
         odom.pose.pose.orientation = quaternion
+        # TODO: add odom.pose.covariance
         odom.child_frame_id = self.base_frame_id
         odom.twist.twist.linear.x = dx
         odom.twist.twist.linear.y = 0
         odom.twist.twist.angular.z = dr
+        odom.twist.covariance[0] = 1e-3 # vy
+        odom.twist.covariance[7] = 1e-3 # vy
+        odom.twist.covariance[14] = 1e-6 # vz
+        odom.twist.covariance[21] = 1e-6 # wx
+        odom.twist.covariance[28] = 1e-6 # wy
+        odom.twist.covariance[35] = 1e-3 # wz
         self.odomPub.publish(odom)
 
     def update(self):
