@@ -64,9 +64,9 @@ class EtherbotixNode:
             if self.board.recv() > 0:
                 # update base (and publish odometry)
                 self.base.update_odometry()
+                self.imu.publish(self.board)
 
             self.base.update()
-            self.imu.publish(self.board)
 
             r.sleep()
 
