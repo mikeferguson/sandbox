@@ -1,0 +1,30 @@
+<package>
+  <name>moveit_planners_sbpl</name>
+  <version>0.1.0</version>
+  <description>MoveIt interface to SBPL</description>
+  <author email="gil@hidof.com">Gil Jones</author>
+  <maintainer email="j.corbett@sssmanufacturing.com">Jeremy Corbett</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://moveit.ros.org</url>
+  <url type="bugtracker">https://github.com/ros-planning/moveit_planners/issues</url>
+  <url type="repository">https://github.com/ros-planning/moveit_planners</url>
+
+  <buildtool_depend>catkin</buildtool_depend> 
+
+  <build_depend>moveit_core</build_depend>
+  <build_depend>sbpl</build_depend>
+  <build_depend>angles</build_depend>
+  <build_depend>pluginlib</build_depend>
+
+  <run_depend>moveit_core</run_depend>
+  <run_depend>sbpl</run_depend>
+  <run_depend>angles</run_depend>
+  <run_depend>pluginlib</run_depend>
+
+  <!--<export>
+    <moveit_core plugin="${prefix}/sbpl_interface_plugin_description.xml"/>
+  </export>-->
+
+</package>
