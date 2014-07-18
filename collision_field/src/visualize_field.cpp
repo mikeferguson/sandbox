@@ -25,15 +25,17 @@ int main( int argc, char* argv[] )
 
   ros::Publisher pub = nh.advertise<visualization_msgs::Marker>("field", 1, true /* latched */);
 
+  ros::Time t = ros::Time::now();
   distance_field::PropagationDistanceField field(2.0, 2.0, 2.0,   /* x, y, z */
-                                                 0.025,           /* resolution */
+                                                 0.02,           /* resolution */
                                                  -0.5, -1.0, 0.0, /* origin */
                                                  2.0);            /* max distance (all cells initialized to this) */
+  std::cout << "Creation time: " << (ros::Time::now() - t).toSec() << std::endl;
 
 
   std::cout << "Cells in x direction: " << field.getXNumCells() << std::endl;
 
-  ros::Time t = ros::Time::now();
+  t = ros::Time::now();
   for (size_t i = 0; i < h.size(); ++i)
   {
     // This would be filled in by the robotstate
