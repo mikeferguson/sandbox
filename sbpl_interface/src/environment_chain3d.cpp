@@ -41,7 +41,6 @@ namespace sbpl_interface
 {
 
 EnvironmentChain3D::EnvironmentChain3D() :
-  //bfs_(NULL),
   hash_data_(StateID2IndexMapping),
   have_low_res_prims_(false)
 {
@@ -155,7 +154,7 @@ void EnvironmentChain3D::GetSuccs(int source_state_ID,
 
     // Get end effector pose
     int xyz[3];
-    if (!getEndEffectorXYZ(succ_joint_angles, xyz))
+    if (!getEndEffectorCoord(succ_joint_angles, xyz))
       continue;
 
     // Get coord
@@ -226,9 +225,9 @@ bool EnvironmentChain3D::isStateGoal(const std::vector<double>& angles)
   throw new SBPL_Exception();
 }
 
-bool EnvironmentChain3D::getEndEffectorXYZ(const std::vector<double>& angles, int * xyz)
+bool EnvironmentChain3D::getEndEffectorCoord(const std::vector<double>& angles, int * xyz)
 {
-  ROS_WARN("EnvironmentChain3D has no getEndEffectorXYZ defined");
+  ROS_WARN("EnvironmentChain3D has no getEndEffectorCoord defined");
   return false;
 }
 

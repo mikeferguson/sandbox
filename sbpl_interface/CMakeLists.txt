@@ -54,6 +54,13 @@ add_library(${MOVEIT_LIB_NAME}
   src/environment_chain3d.cpp
   src/environment_chain3d_moveit.cpp
 )
+target_link_libraries(${MOVEIT_LIB_NAME}
+  ${SBPL_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+add_subdirectory(test)
 
 #install(FILES sbpl_interface_plugin_description.xml
 #  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

@@ -36,8 +36,10 @@
 #ifndef _ENVIRONMENT_CHAIN3D_MOVEIT_H_
 #define _ENVIRONMENT_CHAIN3D_MOVEIT_H_
 
-#include <sbpl_interface/environment_chain3d.h>
 #include <sbpl_interface/bfs3d/BFS_3D.h>
+#include <sbpl_interface/environment_chain3d.h>
+#include <sbpl_interface/planning_params.h>
+#include <moveit/distance_field/propagation_distance_field.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/robot_state/robot_state.h>
 #include <moveit/robot_model/joint_model_group.h>
@@ -50,13 +52,13 @@ namespace sbpl_interface
 class EnvironmentChain3DMoveIt: public EnvironmentChain3D
 {
 public:
-  EnvironmentChain3DMoveIt(const planning_scene::PlanningSceneConstPtr& planning_scene);
+  EnvironmentChain3DMoveIt();
   virtual ~EnvironmentChain3DMoveIt();
 
   bool setupForMotionPlan(const planning_scene::PlanningSceneConstPtr& planning_scene,
                           const moveit_msgs::MotionPlanRequest &req,
-                          moveit_msgs::MotionPlanResponse& res);
-                          // TODO: should we add back PlanningParams?
+                          moveit_msgs::MotionPlanResponse& res,
+                          PlanningParams& params);
 
   bool populateTrajectoryFromStateIDSequence(const std::vector<int>& state_ids,
                                              trajectory_msgs::JointTrajectory& traj) const;
@@ -69,8 +71,10 @@ protected:
   /** @brief Check goal constraints. */
   virtual bool isStateGoal(const std::vector<double>& angles);
 
-  /** @brief Get the grid location of the end effector based on joint angles. */
-  virtual bool getEndEffectorXYZ(const std::vector<double>& angles, int * xyz);
+  /** @brief Get the discrete XYZ of the end effector based on joint angles. */
+  virtual bool getEndEffectorCoord(const std::vector<double>& angles, int * xyz);
+  virtual bool continuousXYZtoDiscreteXYZ(const double X, const double Y, const double Z,
+                                          int& x, int& y, int& z);
 
   /** @brief The heuristic based on BFS. */
   virtual int getEndEffectorHeuristic(int FromStateID, int ToStateID);
@@ -81,13 +85,35 @@ protected:
   std::string planning_group_;
   const robot_model::JointModelGroup* joint_model_group_;
   const robot_model::LinkModel* tip_link_model_;
+  PlanningParams params_;
 
   Eigen::Affine3d goal_pose_;
-  kinematic_constraints::KinematicConstraintSet goal_constraint_set_;
-  kinematic_constraints::KinematicConstraintSet path_constraint_set_;
+  kinematic_constraints::KinematicConstraintSet* goal_constraint_set_;
+  kinematic_constraints::KinematicConstraintSet* path_constraint_set_;
 
+  distance_field::DistanceField* field_;
   BFS_3D *bfs_;
 };
+
+/**
+ *  \brief Fill in the BFS walls from a DistanceField
+ *  \returns The number of walls filled in.
+ */
+inline int fillBFSfromField(distance_field::DistanceField* field,
+                            BFS_3D * bfs,
+                            PlanningParams& params)
+{
+  int walls = 0;
+  for (int z = 1; z < field->getZNumCells() - 1; ++z)
+    for (int y = 1; y < field->getYNumCells() - 1; ++y)
+      for (int x = 1; x < field->getXNumCells() - 1; ++x)
+        if (field->getDistance(x,y,z) <= params.planning_link_sphere_radius)
+        {
+          bfs->setWall(x, y, z);
+          walls++;
+        }
+  return walls;
+}
 
 }  // namespace sbpl_interface
 

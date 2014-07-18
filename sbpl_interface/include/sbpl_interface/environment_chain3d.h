@@ -157,6 +157,13 @@ struct PlanningStatistics
   {
   }
 
+  double distance_field_percent_occupied_;
+  ros::WallDuration distance_field_setup_time_;
+  ros::WallDuration heuristic_setup_time_;
+  ros::WallDuration total_setup_time_;
+
+  ros::WallDuration heuristic_run_time_;
+
   unsigned int total_expansions_;
   ros::WallDuration total_expansion_time_;
 
@@ -283,7 +290,7 @@ protected:
   virtual bool isStateGoal(const std::vector<double>& angles);
 
   /** @brief Get the grid location of the end effector based on joint angles. */
-  virtual bool getEndEffectorXYZ(const std::vector<double>& angles, int * xyz);
+  virtual bool getEndEffectorCoord(const std::vector<double>& angles, int * xyz);
 
   /** @brief Calculate the cost for moving from one state to another -- this is used in GetSuccs. */
   virtual int calculateCost(EnvChain3dHashEntry* HashEntry1, EnvChain3dHashEntry* HashEntry2);
@@ -301,14 +308,11 @@ protected:
 
   // The motion primitives
   std::vector<MotionPrimitive> prims_;
-  bool have_low_res_prims_;   // Do we split prims between high/low res?
+  bool have_low_res_prims_;   /// Do we split prims between high/low res?
   double angle_discretization_;
 
   // Track our time and expansions
   PlanningStatistics planning_statistics_;
-
-  //BFS_3D *bfs_;
-  //int getBFSCostToGoal(int x, int y, int z) const;
 };
 
 inline void EnvironmentChain3D::convertJointAnglesToCoord(const std::vector<double> &angle, std::vector<int> &coord)

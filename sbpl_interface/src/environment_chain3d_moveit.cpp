@@ -37,24 +37,28 @@
 
 #include <Eigen/Core>
 #include <sbpl_interface/environment_chain3d_moveit.h>
-//#include <moveit/robot_model/robot_model.h>
 #include <moveit/robot_state/conversions.h>
 
 /*
  * Notes:
+ *  * distance field is not yet getting updated with planning scene elements
  *  * not using distance field for anything except constructing BFS.
  *    in the future, distance field should be used for collision checking as well.
+ *  * distance field is recreated every time -- seems wasteful
  */
 
 namespace sbpl_interface
 {
 
-EnvironmentChain3DMoveIt::EnvironmentChain3DMoveIt(const planning_scene::PlanningSceneConstPtr& planning_scene) :
+inline double getEuclideanDistance(double x1, double y1, double z1, double x2, double y2, double z2)
+{
+  return sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
+}
+
+EnvironmentChain3DMoveIt::EnvironmentChain3DMoveIt() :
   EnvironmentChain3D(),
-  planning_scene_(planning_scene),
-  state_(new robot_state::RobotState(planning_scene->getCurrentState())),
-  goal_constraint_set_(planning_scene->getRobotModel()),
-  path_constraint_set_(planning_scene->getRobotModel()),
+  goal_constraint_set_(NULL),
+  path_constraint_set_(NULL),
   bfs_(NULL)
 {
 }
@@ -68,9 +72,10 @@ EnvironmentChain3DMoveIt::~EnvironmentChain3DMoveIt()
 bool EnvironmentChain3DMoveIt::setupForMotionPlan(
    const planning_scene::PlanningSceneConstPtr& planning_scene,
    const moveit_msgs::MotionPlanRequest &mreq,
-   moveit_msgs::MotionPlanResponse& mres)
-   // TODO: add params?
+   moveit_msgs::MotionPlanResponse& mres,
+   PlanningParams& params)
 {
+  ros::WallTime setup_start = ros::WallTime::now();
   ROS_INFO("Setting up for motion planning!");
 
   // Setup data structs
@@ -78,6 +83,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   planning_group_ = mreq.group_name;
   joint_model_group_ = state_->getJointModelGroup(planning_group_);
   tip_link_model_ = state_->getLinkModel(joint_model_group_->getLinkModelNames().back());
+  params_ = params;
 
   // Local copy of current state
   std::vector<double> start_joint_values;
@@ -104,10 +110,11 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     return false;
   }
 
-  // TODO: create distance field and update it
-  // TODO: setup BFS walls from distance field
-  
-  // TODO: setup motion primitives (based on params?)
+  // Setup motion primitives
+  for (size_t i = 0; i < params_.prims.size(); ++i)
+  {
+    addMotionPrimitive(params_.prims[i]);
+  }
 
   // Setup start position in discrete space
   std::vector<int> start_coords;
@@ -118,7 +125,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   ROS_WARN_STREAM("[Start coords] " << dbg_ss.str());
 
   int start_xyz[3];
-  if (!getEndEffectorXYZ(start_joint_values, start_xyz))
+  if (!getEndEffectorCoord(start_joint_values, start_xyz))
   {
     ROS_ERROR("Bad start pose");
     mres.error_code.val = moveit_msgs::MoveItErrorCodes::INVALID_ROBOT_STATE;
@@ -158,7 +165,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     state_->update();
 
     convertJointAnglesToCoord(goal_joint_values, goal_coords);
-    if (!getEndEffectorXYZ(goal_joint_values, goal_xyz))
+    if (!getEndEffectorCoord(goal_joint_values, goal_xyz))
     {
       ROS_ERROR("Bad goal pose");
       mres.error_code.val = moveit_msgs::MoveItErrorCodes::INVALID_GOAL_CONSTRAINTS;
@@ -184,26 +191,61 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     goal_joint_values.resize(start_joint_values.size());
     goal_coords.resize(start_joint_values.size());
 
-    // TODO: fill in goal_xyz with the values from the other constraints so that heuristic will work
-    ROS_ERROR("Only joint constraints are currently allowed!");
-    return false;
+    // Fill in goal_xyz with the values from position constraints so that heuristic will work
+    if (mreq.goal_constraints[0].position_constraints.size() > 0)
+    {
+      ROS_WARN("Planner assumes that position constraint is in planning frame and that link is \
+                set to the same link as terminates the planning group.");
+      geometry_msgs::Vector3 target = mreq.goal_constraints[0].position_constraints[0].target_point_offset;
+      continuousXYZtoDiscreteXYZ(target.x, target.y, target.z, goal_xyz[0], goal_xyz[1], goal_xyz[2]);
+    }
+    else
+    {
+      ROS_ERROR("No joint or position constraints -- cannot plan!");
+      return false;
+    }
   }
 
   std::vector<std::string> goal_dofs = state_->getJointModelGroup(planning_group_)->getActiveJointModelNames();
   assert(goal_dofs.size() == start_joint_values.size());
   assert(goal_dofs.size() == goal_joint_values.size());
 
-  bfs_->run(goal_xyz[0], goal_xyz[1], goal_xyz[2]);
+  if (params_.use_bfs)
+  {
+    // Create distance field
+    ros::WallTime distance_start = ros::WallTime::now();
+    field_ = new distance_field::PropagationDistanceField(params_.field_x, params.field_y, params_.field_z,
+                                                          params_.field_resolution,
+                                                          params_.field_origin_x, params_.field_origin_y, params.field_origin_z,
+                                                          params_.field_z /* max distance, all cells initialize to this */);
+    // TODO TODO TODO update it from planning scene
+    planning_statistics_.distance_field_setup_time_ = ros::WallTime::now() - distance_start;
+
+    // Setup BFS
+    bfs_ = new BFS_3D(field_->getXNumCells(), field_->getYNumCells(), field_->getZNumCells());
+    // Push obstacles from distance field
+    ros::WallTime heuristic_start = ros::WallTime::now();
+    int walls = fillBFSfromField(field_, bfs_, params_);
+    planning_statistics_.heuristic_setup_time_ = ros::WallTime::now() - heuristic_start;
+    planning_statistics_.distance_field_percent_occupied_ = double(walls)/double(field_->getXNumCells()*field_->getYNumCells()*field_->getZNumCells());
+    // Run BFS, have it update planning_stats when done
+    bfs_->run(goal_xyz[0], goal_xyz[1], goal_xyz[2], &planning_statistics_.heuristic_run_time_);
+  }
 
   // Setup goal constraints
-  goal_constraint_set_.clear();
-  goal_constraint_set_.add(mreq.goal_constraints[0], planning_scene_->getTransforms());
+  if (goal_constraint_set_ == NULL)
+    goal_constraint_set_ = new kinematic_constraints::KinematicConstraintSet(planning_scene_->getRobotModel());
+  goal_constraint_set_->clear();
+  goal_constraint_set_->add(mreq.goal_constraints[0], planning_scene_->getTransforms());
   goal_ = hash_data_.addHashEntry(goal_coords, goal_joint_values, goal_xyz, 0);
 
   // Setup path constraints
-  path_constraint_set_.clear();
-  path_constraint_set_.add(mreq.path_constraints, planning_scene_->getTransforms());
+  if (path_constraint_set_ == NULL)
+    path_constraint_set_ = new kinematic_constraints::KinematicConstraintSet(planning_scene_->getRobotModel());
+  path_constraint_set_->clear();
+  path_constraint_set_->add(mreq.path_constraints, planning_scene_->getTransforms());
 
+  planning_statistics_.total_setup_time_ = ros::WallTime::now() - setup_start;
   return true;
 }
 
@@ -215,7 +257,7 @@ bool EnvironmentChain3DMoveIt::isStateToStateValid(const std::vector<double>& st
   state_->update();
 
   // Ensure path constraints
-  kinematic_constraints::ConstraintEvaluationResult con_res = path_constraint_set_.decide(*state_);
+  kinematic_constraints::ConstraintEvaluationResult con_res = path_constraint_set_->decide(*state_);
   if (!con_res.satisfied)
     return false;
 
@@ -245,11 +287,11 @@ bool EnvironmentChain3DMoveIt::isStateGoal(const std::vector<double>& angles)
   state_->update();
 
   // Are goal constraints met?
-  kinematic_constraints::ConstraintEvaluationResult con_res = goal_constraint_set_.decide(*state_);
+  kinematic_constraints::ConstraintEvaluationResult con_res = goal_constraint_set_->decide(*state_);
   return con_res.satisfied;
 }
 
-bool EnvironmentChain3DMoveIt::getEndEffectorXYZ(const std::vector<double>& angles, int * xyz)
+bool EnvironmentChain3DMoveIt::getEndEffectorCoord(const std::vector<double>& angles, int * xyz)
 {
   // Update robot_state
   state_->setJointGroupPositions(joint_model_group_, angles);
@@ -258,32 +300,44 @@ bool EnvironmentChain3DMoveIt::getEndEffectorXYZ(const std::vector<double>& angl
   // Get pose of end effector
   Eigen::Affine3d pose = state_->getGlobalLinkTransform(tip_link_model_);
 
-  // TODO convert pose into xyz in BFS grid
-  
+  // Convert pose into xyz in BFS grid
+  return continuousXYZtoDiscreteXYZ(pose.translation().x(),
+                                    pose.translation().y(),
+                                    pose.translation().z(),
+                                    xyz[0],
+                                    xyz[1],
+                                    xyz[2]);
+}
 
+bool EnvironmentChain3DMoveIt::continuousXYZtoDiscreteXYZ(
+  const double X, const double Y, const double Z,
+  int& x, int& y, int& z)
+{
+  x = (X - params_.field_origin_x) / params_.field_resolution;
+  y = (Y - params_.field_origin_y) / params_.field_resolution;
+  z = (Z - params_.field_origin_z) / params_.field_resolution;
+  // TODO: should we check limits of the field?
   return true;
 }
 
 int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int FromStateID, int ToStateID)
 {
   //boost::this_thread::interruption_point();
-  EnvChain3dHashEntry* from_hash_entry = hash_data_.state_ID_to_coord_table_[FromStateID];
+  EnvChain3dHashEntry* from = hash_data_.state_ID_to_coord_table_[FromStateID];
 
-  if (1)//use_bfs_)
+  if (params_.use_bfs)
   {
     // Return the BFS cost to goal
-    return int(bfs_->getDistance(from_hash_entry->xyz[0],
-                                 from_hash_entry->xyz[1],
-                                 from_hash_entry->xyz[2])) /** cost_per_cell_ TODO */;
+    return static_cast<int>(bfs_->getDistance(from->xyz[0],
+                                              from->xyz[1],
+                                              from->xyz[2])) * params_.cost_per_cell;
   }
   else
   {
     // Return euclidean distance to goal
-    double x, y, z;
-    // TODO convert xyz into continuous world x, y, z to compare against goal?
-    // TODO maybe we can just do this in discrete space?
-    //grid_->gridToWorld(FromHashEntry->xyz[0],FromHashEntry->xyz[1],FromHashEntry->xyz[2], x, y, z);
-    //return getEuclideanDistance(x, y, z, pdata_.goal.pose[0], pdata_.goal.pose[1], pdata_.goal.pose[2]) * prm_->cost_per_meter_;
+    double dist = getEuclideanDistance(from->xyz[0], from->xyz[1], from->xyz[2],
+                                       goal_->xyz[0], goal_->xyz[1], goal_->xyz[2]);
+    return static_cast<int>(dist * params_.field_resolution * params_.cost_per_meter);
   }
 }    
 
