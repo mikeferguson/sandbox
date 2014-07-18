@@ -12,12 +12,13 @@ link_directories(${SBPL_LIBRARY_DIRS})
 
 find_package(Boost REQUIRED system filesystem date_time thread serialization)
 find_package(catkin REQUIRED COMPONENTS
-  moveit_core 
-  moveit_ros_planning
-  roscpp
-  rosconsole
-  pluginlib
   angles
+  eigen_conversions
+  moveit_core
+  moveit_ros_planning
+  pluginlib
+  rosconsole
+  roscpp
 )
 
 catkin_package(

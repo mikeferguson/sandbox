@@ -38,10 +38,10 @@
 #include <Eigen/Core>
 #include <sbpl_interface/environment_chain3d_moveit.h>
 #include <moveit/robot_state/conversions.h>
+#include <eigen_conversions/eigen_msg.h>
 
 /*
  * Notes:
- *  * distance field is not yet getting updated with planning scene elements
  *  * not using distance field for anything except constructing BFS.
  *    in the future, distance field should be used for collision checking as well.
  *  * distance field is recreated every time -- seems wasteful
@@ -218,7 +218,19 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
                                                           params_.field_resolution,
                                                           params_.field_origin_x, params_.field_origin_y, params.field_origin_z,
                                                           params_.field_z /* max distance, all cells initialize to this */);
-    // TODO TODO TODO update it from planning scene
+    // Update distance field from planning scene
+    // TODO This could be massively improved (especially if we switch to some variation of the hybrid distance field)
+    collision_detection::WorldConstPtr world = planning_scene_->getWorld();
+    std::vector<std::string> objects = world->getObjectIds();
+    for (size_t i = 0; i < objects.size(); ++i)
+    {
+      collision_detection::World::ObjectConstPtr obj = world->getObject(objects[i]);
+      if (obj->shapes_.size() == 0)
+        continue;
+      geometry_msgs::Pose pose;
+      tf::poseEigenToMsg(obj->shape_poses_[0], pose);
+      field_->addShapeToField(obj->shapes_[0].get(), pose);
+    }
     planning_statistics_.distance_field_setup_time_ = ros::WallTime::now() - distance_start;
 
     // Setup BFS
