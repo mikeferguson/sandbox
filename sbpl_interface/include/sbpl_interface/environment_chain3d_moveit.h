@@ -38,7 +38,6 @@
 
 #include <sbpl_interface/bfs3d/BFS_3D.h>
 #include <sbpl_interface/environment_chain3d.h>
-#include <sbpl_interface/planning_params.h>
 #include <moveit/distance_field/propagation_distance_field.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/robot_state/robot_state.h>
@@ -58,7 +57,7 @@ public:
   bool setupForMotionPlan(const planning_scene::PlanningSceneConstPtr& planning_scene,
                           const moveit_msgs::MotionPlanRequest &req,
                           moveit_msgs::MotionPlanResponse& res,
-                          PlanningParams& params);
+                          SBPLPlanningParams& params);
 
   bool populateTrajectoryFromStateIDSequence(const std::vector<int>& state_ids,
                                              trajectory_msgs::JointTrajectory& traj) const;
@@ -85,7 +84,6 @@ protected:
   std::string planning_group_;
   const robot_model::JointModelGroup* joint_model_group_;
   const robot_model::LinkModel* tip_link_model_;
-  PlanningParams params_;
 
   Eigen::Affine3d goal_pose_;
   kinematic_constraints::KinematicConstraintSet* goal_constraint_set_;
@@ -101,7 +99,7 @@ protected:
  */
 inline int fillBFSfromField(distance_field::DistanceField* field,
                             BFS_3D * bfs,
-                            PlanningParams& params)
+                            SBPLPlanningParams& params)
 {
   int walls = 0;
   for (int z = 1; z < field->getZNumCells() - 1; ++z)

@@ -40,7 +40,7 @@ TEST(testSpace, testcontinuousXYZtoDiscreteXYZ)
 // Test to make sure that math of BFS and Distance Field line up!
 TEST(testSpace, testFieldBFS)
 {
-  sbpl_interface::PlanningParams params;
+  sbpl_interface::SBPLPlanningParams params;
 
   distance_field::PropagationDistanceField field(params.field_x, params.field_y, params.field_z,
                                                  params.field_resolution,

@@ -44,7 +44,6 @@ EnvironmentChain3D::EnvironmentChain3D() :
   hash_data_(StateID2IndexMapping),
   have_low_res_prims_(false)
 {
-  angle_discretization_ = angles::from_degrees(1);
 }
 
 EnvironmentChain3D::~EnvironmentChain3D()

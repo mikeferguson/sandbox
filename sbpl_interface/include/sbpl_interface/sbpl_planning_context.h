@@ -1,8 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2014, Michael Ferguson
- *  Copyright (c) 2008, Maxim Likhachev
+ *  Copyright (c) 2012, Willow Garage, Inc.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -15,7 +14,7 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of University of Pennsylvania nor the names of its
+ *   * Neither the name of Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
  *
@@ -33,69 +32,52 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef _SBPL_INTERFACE_PLANNING_PARAMS_H_
-#define _SBPL_INTERFACE_PLANNING_PARAMS_H_
+#ifndef _MOVEIT_SBPL_INTERFACE_SBPL_PLANNING_CONTEXT_H_
+#define _MOVEIT_SBPL_INTERFACE_SBPL_PLANNING_CONTEXT_H_
 
-#include <angles/angles.h>
-#include <sbpl_interface/motion_primitives.h>
+#include <moveit/robot_model/robot_model.h>
+#include <sbpl_interface/environment_chain3d_moveit.h>  // for PlanningStatistics
+#include <sbpl_interface/sbpl_planning_params.h>
 
 namespace sbpl_interface
 {
 
-struct PlanningParams
+/**
+ *  @brief Representation of a particular planning context -- the planning
+ *         scene and the request are known, solution is not yet computed
+ */
+class SBPLPlanningContext : public planning_interface::PlanningContext
 {
-  PlanningParams() :
-    use_bfs(true),
-    cost_per_cell(1),
-    cost_per_meter(50),
-    field_resolution(0.02),
-    field_x(2.0),
-    field_y(2.0),
-    field_z(2.0),
-    field_origin_x(-0.5),
-    field_origin_y(-1.0),
-    field_origin_z(0.0),
-    planning_link_sphere_radius(0.05)
-  {
-    // TODO: this is a huge hack, load prims from a file or something
-    // Setup default mprims
-    for (int i = 0; i < 7; ++i)
-    {
-      std::vector<double> action(7,0.0);
+public:
+  /// @sa planning_interface::PlanningContext::PlanningContext
+  SBPLPlanningContext(const std::string& name, const std::string& group);
 
-      action[i] = angles::from_degrees(4);
-      StaticMotionPrimitive s1(action);
-      prims.push_back(s1);
+  virtual ~SBPLPlanningContext();
 
-      action[i] = -action[i];
-      StaticMotionPrimitive s2(action);
-      prims.push_back(s2);    
-    }
-  }
+  bool init(const robot_model::RobotModelConstPtr& model,
+            const sbpl_interface::SBPLPlanningParams& params);
 
-  // Algorithms
-  bool use_bfs;             /// should we use BFS or Euclidean distance heuristic?
+  /// @sa planning_interface::PlanningContext::solve
+  virtual bool solve(planning_interface::MotionPlanResponse& res);
 
-  // Scoring
-  int cost_per_cell;
-  int cost_per_meter;
+  /// @sa planning_interface::PlanningContext::solve
+  virtual bool solve(planning_interface::MotionPlanDetailedResponse& res);
 
-  // Distance Field
-  double field_resolution;  /// resolution (m/cell) of field
-  double field_x;           /// size of the distance field
-  double field_y;
-  double field_z;
-  double field_origin_x;    /// origin of the distance field
-  double field_origin_y;
-  double field_origin_z;
+  /// @sa planning_interface::PlanningContext::terminate
+  virtual bool terminate();
 
-  // Other
-  double planning_link_sphere_radius;  /// radius of sphere used to approximate point gripper for bfs heuristic
+  /// @sa planning_interface::PlanningContext::clear
+  virtual void clear();
 
-  // Motion Primitives
-  std::vector<MotionPrimitive> prims;
+protected:
+  ros::NodeHandle ph_;
+
+  robot_model::RobotModelConstPtr robot_model_;
+  sbpl_interface::SBPLPlanningParams sbpl_params_;
+
+  PlanningStatistics last_planning_statistics_;
 };
 
 }  // namespace sbpl_interface
 
-#endif  // _SBPL_INTERFACE_PLANNING_PARAMS_H_
+#endif  // _MOVEIT_SBPL_INTERFACE_SBPL_PLANNING_CONTEXT_H_

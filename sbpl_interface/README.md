@@ -2,6 +2,13 @@
 
 This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
 
+## Status
+ * Performs no path shortening
+ * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
+ * Distance field is only used for BFS, not used for collision checking.
+ * Motion Primitives are hard coded, not loaded from any sort of parameter/file.
+ * Snap to XYZRPY, Snap to RPY are not implemented.
+
 ## Required Components
  * PlanningData
    * This holds the actual graph, in the form of a hash table, can be taken as is.
@@ -22,7 +29,6 @@ This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
      * This doesn't appear to be used at first look in sbpl_motion_planning, however,
        it's baked into the computeIK call.
    * Loader utilities to create from file
- * Add support for joint-space goals?
 
 ## Other Notes
 
@@ -39,4 +45,3 @@ ROS MoveIt Existing Interface
    See (https://github.com/ros-planning/moveit_core/commit/e1cb349ecfd2dad8b61d1b0d3717036175ce61ba).
    Also disallows the use of BFS (which makes the planner really slow).
    Although it is duplicating data and not nearly as nice -- maybe we just use the regular collision world and get rid of this param?
- * 

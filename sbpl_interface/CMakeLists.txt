@@ -23,7 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
   LIBRARIES
-#    moveit_sbpl_interface
+    moveit_sbpl_arm_planner
     ${SBPL_LIBRARIES}
   INCLUDE_DIRS
 #    sbpl_interface/include
@@ -46,19 +46,27 @@ link_directories(${catkin_LIBRARY_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 link_directories(${SBPL_LIBRARY_DIRS})
 
-#add_subdirectory(sbpl_interface)
-set(MOVEIT_LIB_NAME moveit_sbpl_interface)
-add_library(${MOVEIT_LIB_NAME}
+add_library(moveit_sbpl_arm_planner
   src/bfs3d/BFS_3D.cpp
   src/bfs3d/Search.cpp
-#  src/sbpl_interface.cpp
   src/environment_chain3d.cpp
   src/environment_chain3d_moveit.cpp
 )
-target_link_libraries(${MOVEIT_LIB_NAME}
-  ${SBPL_LIBRARIES}
-  ${catkin_LIBRARIES}
+target_link_libraries(moveit_sbpl_arm_planner
   ${Boost_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${SBPL_LIBRARIES}
+)
+
+set(MOVEIT_PLUGIN_NAME moveit_sbpl_planner_plugin)
+add_library(${MOVEIT_PLUGIN_NAME}
+  src/sbpl_planning_context.cpp
+  src/sbpl_planning_manager.cpp
+)
+target_link_libraries(${MOVEIT_PLUGIN_NAME}
+  ${Boost_LIBRARIES}
+  ${catkin_LIBRARIES}
+  moveit_sbpl_arm_planner
 )
 
 add_subdirectory(test)

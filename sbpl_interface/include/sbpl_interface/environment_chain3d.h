@@ -42,6 +42,7 @@
 #include <angles/angles.h>
 #include <sbpl/headers.h>
 #include <sbpl_interface/motion_primitives.h>
+#include <sbpl_interface/sbpl_planning_params.h>
 
 namespace sbpl_interface
 {
@@ -171,6 +172,18 @@ struct PlanningStatistics
   ros::WallDuration total_coll_check_time_;
 
   ros::WallDuration total_planning_time_;
+
+  void print()
+  {
+    ROS_INFO_STREAM("Distance Field Setup Time: " << distance_field_setup_time_.toSec() << ". " <<
+                    "Occupied: " << distance_field_percent_occupied_ << "%");
+    ROS_INFO_STREAM("Heuristic Time: " << heuristic_setup_time_.toSec());
+    ROS_INFO_STREAM("Expansions: " << total_expansions_ << ". " <<
+                    "Average Time: " << total_expansion_time_.toSec()/static_cast<double>(total_expansions_) << "s " <<
+                    "Freq: " << 1.0/total_expansion_time_.toSec()/static_cast<double>(total_expansions_) << "hz");
+    ROS_INFO_STREAM("Total collision checks " << coll_checks_ << ". " <<
+                    "Freq: " << 1.0/total_coll_check_time_.toSec()/static_cast<double>(coll_checks_) << "hz");
+  }
 };
 
 /** \brief Environment to be used when planning for a Robotic Arm using the SBPL. */
@@ -281,6 +294,14 @@ public:
   /** @brief Add a motion primitive */
   virtual void addMotionPrimitive(MotionPrimitive& mp);
 
+  /** @brief Get the planning parameters */
+  SBPLPlanningParams& getParams() { return params_; }
+
+  PlanningStatistics& getPlanningStatistics() { return planning_statistics_; }
+
+  int getStartID() { return start_->stateID; }
+  int getGoalID() { return goal_->stateID; }
+
 protected:
   /** @brief Is state valid? This should be defined by the interface. */
   virtual bool isStateToStateValid(const std::vector<double>& start,
@@ -306,10 +327,12 @@ protected:
   EnvChain3dHashEntry* start_;
   EnvChain3dHashEntry* goal_;
 
+  // Parameters
+  SBPLPlanningParams params_;
+
   // The motion primitives
   std::vector<MotionPrimitive> prims_;
-  bool have_low_res_prims_;   /// Do we split prims between high/low res?
-  double angle_discretization_;
+  bool have_low_res_prims_;  /// Do we split prims between high/low res?
 
   // Track our time and expansions
   PlanningStatistics planning_statistics_;
@@ -321,7 +344,7 @@ inline void EnvironmentChain3D::convertJointAnglesToCoord(const std::vector<doub
   for (size_t i = 0; i < angle.size(); ++i)
   {
     double pos_angle = angles::normalize_angle_positive(angle[i]);
-    coord[i] = (int)((pos_angle + angle_discretization_*0.5)/angle_discretization_);
+    coord[i] = (int)((pos_angle + params_.angle_discretization*0.5)/params_.angle_discretization);
   }
 }
 
@@ -329,7 +352,7 @@ inline void EnvironmentChain3D::convertCoordToJointAngles(const std::vector<int>
 {
   angle.resize(coord.size());
   for (size_t i = 0; i < coord.size(); ++i)
-    angle[i] = coord[i]*angle_discretization_;
+    angle[i] = coord[i]*params_.angle_discretization;
 }
 
 }  // namespace sbpl_interface

@@ -40,13 +40,6 @@
 #include <moveit/robot_state/conversions.h>
 #include <eigen_conversions/eigen_msg.h>
 
-/*
- * Notes:
- *  * not using distance field for anything except constructing BFS.
- *    in the future, distance field should be used for collision checking as well.
- *  * distance field is recreated every time -- seems wasteful
- */
-
 namespace sbpl_interface
 {
 
@@ -73,7 +66,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
    const planning_scene::PlanningSceneConstPtr& planning_scene,
    const moveit_msgs::MotionPlanRequest &mreq,
    moveit_msgs::MotionPlanResponse& mres,
-   PlanningParams& params)
+   SBPLPlanningParams& params)
 {
   ros::WallTime setup_start = ros::WallTime::now();
   ROS_INFO("Setting up for motion planning!");
