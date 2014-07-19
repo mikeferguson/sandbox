@@ -69,11 +69,12 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
    SBPLPlanningParams& params)
 {
   ros::WallTime setup_start = ros::WallTime::now();
-  ROS_INFO("Setting up for motion planning!");
+  ROS_INFO("Setting up for SBPL motion planning!");
 
   // Setup data structs
   planning_scene_ = planning_scene;
   planning_group_ = mreq.group_name;
+  state_.reset(new robot_state::RobotState(planning_scene->getCurrentState()));
   joint_model_group_ = state_->getJointModelGroup(planning_group_);
   tip_link_model_ = state_->getLinkModel(joint_model_group_->getLinkModelNames().back());
   params_ = params;
@@ -82,14 +83,14 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   std::vector<double> start_joint_values;
   moveit::core::robotStateMsgToRobotState(mreq.start_state, *state_);
   state_->copyJointGroupPositions(planning_group_, start_joint_values);
-  state_->update(); // make sure joint values aren't dirty
+  state_->update();  // make sure joint values aren't dirty
 
   // Print out the starting joint angles
   std::stringstream dbg_ss;
   dbg_ss.str("");
   for (size_t i=0; i < start_joint_values.size(); ++i)
     dbg_ss << start_joint_values[i] << " ";
-  ROS_WARN_STREAM("[Start angles] " << dbg_ss.str());
+  ROS_INFO_STREAM("[Start angles] " << dbg_ss.str());
 
   // Check start state for collision
   collision_detection::CollisionRequest creq;
@@ -98,7 +99,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   planning_scene->checkCollision(creq, cres, *state_, planning_scene_->getAllowedCollisionMatrix());
   if (cres.collision)
   {
-    ROS_WARN_STREAM("Start state is in collision. Can't plan");
+    ROS_ERROR_STREAM("Start state is in collision. Can't plan");
     mres.error_code.val = moveit_msgs::MoveItErrorCodes::START_STATE_IN_COLLISION;
     return false;
   }
@@ -115,7 +116,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   dbg_ss.str("");
   for (size_t i=0; i<start_coords.size(); ++i)
     dbg_ss << start_coords[i] << " ";
-  ROS_WARN_STREAM("[Start coords] " << dbg_ss.str());
+  ROS_INFO_STREAM("[Start coords] " << dbg_ss.str());
 
   int start_xyz[3];
   if (!getEndEffectorCoord(start_joint_values, start_xyz))
@@ -148,7 +149,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     planning_scene->checkCollision(creq, cres, *state_, planning_scene_->getAllowedCollisionMatrix());
     if (cres.collision)
     {
-      ROS_WARN_STREAM("Goal state is in collision.  Can't plan");
+      ROS_ERROR_STREAM("Goal state is in collision.  Can't plan");
       mres.error_code.val = moveit_msgs::MoveItErrorCodes::GOAL_IN_COLLISION;
       return false;
     }
@@ -169,12 +170,11 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     dbg_ss.str("");
     for (size_t i=0; i<goal_joint_values.size(); ++i)
       dbg_ss << goal_joint_values[i] << " ";
-    ROS_WARN_STREAM("[Goal angles] " << dbg_ss.str());
+    ROS_INFO_STREAM("[Goal angles] " << dbg_ss.str());
     dbg_ss.str("");
     for (size_t i=0; i<goal_coords.size(); ++i)
       dbg_ss << goal_coords[i] << " ";
-    ROS_WARN_STREAM("[Goal coords] " << dbg_ss.str());
-  
+    ROS_INFO_STREAM("[Goal coords] " << dbg_ss.str());
   }
   else
   {
@@ -205,6 +205,8 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
 
   if (params_.use_bfs)
   {
+    ROS_INFO("Setting up to use BFS.");
+
     // Create distance field
     ros::WallTime distance_start = ros::WallTime::now();
     field_ = new distance_field::PropagationDistanceField(params_.field_x, params.field_y, params_.field_z,
@@ -251,6 +253,22 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   path_constraint_set_->add(mreq.path_constraints, planning_scene_->getTransforms());
 
   planning_statistics_.total_setup_time_ = ros::WallTime::now() - setup_start;
+  ROS_INFO("Setup for SBPL motion planning is complete!");
+  return true;
+}
+
+bool EnvironmentChain3DMoveIt::populateTrajectoryFromStateIDSequence(
+    const std::vector<int>& state_ids,
+    trajectory_msgs::JointTrajectory& traj) const
+{
+  traj.joint_names = joint_model_group_->getActiveJointModelNames();
+  traj.points.resize(state_ids.size());
+  for (size_t i = 0; i < state_ids.size(); ++i)
+  {
+    if (state_ids[i] > (int) hash_data_.state_ID_to_coord_table_.size()-1)
+      return false;
+    traj.points[i].positions = hash_data_.state_ID_to_coord_table_[state_ids[i]]->angles;
+  }
   return true;
 }
 
@@ -275,7 +293,7 @@ bool EnvironmentChain3DMoveIt::isStateToStateValid(const std::vector<double>& st
   planning_scene_->checkCollision(req, res, *state_);
 
   // Update profiling
-  ros::WallDuration dur(ros::WallTime::now()-before_coll);
+  ros::WallDuration dur(ros::WallTime::now() - before_coll);
   planning_statistics_.total_coll_check_time_ += dur;
   planning_statistics_.coll_checks_++;
 
@@ -327,7 +345,7 @@ bool EnvironmentChain3DMoveIt::continuousXYZtoDiscreteXYZ(
 
 int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int FromStateID, int ToStateID)
 {
-  //boost::this_thread::interruption_point();
+  boost::this_thread::interruption_point();
   EnvChain3dHashEntry* from = hash_data_.state_ID_to_coord_table_[FromStateID];
 
   if (params_.use_bfs)

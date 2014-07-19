@@ -108,11 +108,10 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   // Print stats
   ROS_INFO_STREAM("planner->replan: " << b_ret << ", planning time: " << el);
   env_chain->getPlanningStatistics().print();
-  ROS_INFO_STREAM("Path length is " << solution_state_ids.size());
 
-  
   if (!b_ret)
   {
+    ROS_ERROR("Planning Failed");
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
     return false;
   }
@@ -133,6 +132,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   }
 
   // TODO: revive shortening
+  ROS_INFO("Path is %d points", static_cast<int>(mres.trajectory.joint_trajectory.points.size()));
 
   last_planning_statistics_ = env_chain->getPlanningStatistics();
   last_planning_statistics_.total_planning_time_ = ros::WallDuration(el);

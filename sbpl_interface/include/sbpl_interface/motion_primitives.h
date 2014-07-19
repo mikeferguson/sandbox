@@ -60,9 +60,9 @@ public:
   }
 
   virtual bool getSuccessorState(const std::vector<double>& start,
-                                 std::vector<double>& end)
+                                 std::vector<double>* end)
   {
-    end = start;  // this is truly a stupid, worthless motion primitive
+    *end = start;  // this is truly a stupid, worthless motion primitive
     return true;
   }
 
@@ -74,6 +74,8 @@ public:
 protected:
   int type_;
 };
+
+typedef boost::shared_ptr<MotionPrimitive> MotionPrimitivePtr;
 
 class StaticMotionPrimitive : public MotionPrimitive
 {
@@ -88,11 +90,11 @@ public:
   }
 
   virtual bool getSuccessorState(const std::vector<double>& start,
-                                 std::vector<double>& end)
+                                 std::vector<double>* end)
   {
-    end = start;
+    end->resize(start.size());
     for (size_t i = 0; i < action_.size(); ++i)
-      end[i] += action_[i];
+      (*end)[i] = start[i] + action_[i];
     return true;
   }
 

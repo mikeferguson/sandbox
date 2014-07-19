@@ -87,7 +87,7 @@ struct SBPLPlanningParams
   ReplanParams planner_params;
 
   // Motion Primitives
-  std::vector<MotionPrimitive> prims;
+  std::vector<MotionPrimitivePtr> prims;
 
   bool init(ros::NodeHandle& nh)
   {
@@ -101,11 +101,11 @@ struct SBPLPlanningParams
       std::vector<double> action(7,0.0);
 
       action[i] = angles::from_degrees(4);
-      StaticMotionPrimitive s1(action);
+      MotionPrimitivePtr s1(new StaticMotionPrimitive(action));
       prims.push_back(s1);
 
       action[i] = -action[i];
-      StaticMotionPrimitive s2(action);
+      MotionPrimitivePtr s2(new StaticMotionPrimitive(action));
       prims.push_back(s2);
     }
 

@@ -29,8 +29,8 @@
   <run_depend>roscpp</run_depend>
   <run_depend>sbpl</run_depend>
 
-  <!--<export>
+  <export>
     <moveit_core plugin="${prefix}/sbpl_interface_plugin_description.xml"/>
-  </export>-->
+  </export>
 
 </package>

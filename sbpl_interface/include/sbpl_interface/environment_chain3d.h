@@ -180,9 +180,9 @@ struct PlanningStatistics
     ROS_INFO_STREAM("Heuristic Time: " << heuristic_setup_time_.toSec());
     ROS_INFO_STREAM("Expansions: " << total_expansions_ << ". " <<
                     "Average Time: " << total_expansion_time_.toSec()/static_cast<double>(total_expansions_) << "s " <<
-                    "Freq: " << 1.0/total_expansion_time_.toSec()/static_cast<double>(total_expansions_) << "hz");
+                    "Freq: " << 1.0/(total_expansion_time_.toSec()/static_cast<double>(total_expansions_)) << "hz");
     ROS_INFO_STREAM("Total collision checks " << coll_checks_ << ". " <<
-                    "Freq: " << 1.0/total_coll_check_time_.toSec()/static_cast<double>(coll_checks_) << "hz");
+                    "Freq: " << 1.0/(total_coll_check_time_.toSec()/static_cast<double>(coll_checks_)) << "hz");
   }
 };
 
@@ -292,7 +292,7 @@ public:
   virtual bool AreEquivalent(int StateID1, int StateID2);
 
   /** @brief Add a motion primitive */
-  virtual void addMotionPrimitive(MotionPrimitive& mp);
+  virtual void addMotionPrimitive(MotionPrimitivePtr& mp);
 
   /** @brief Get the planning parameters */
   SBPLPlanningParams& getParams() { return params_; }
@@ -331,7 +331,7 @@ protected:
   SBPLPlanningParams params_;
 
   // The motion primitives
-  std::vector<MotionPrimitive> prims_;
+  std::vector<MotionPrimitivePtr> prims_;
   bool have_low_res_prims_;  /// Do we split prims between high/low res?
 
   // Track our time and expansions
