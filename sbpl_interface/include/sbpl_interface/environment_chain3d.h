@@ -334,7 +334,6 @@ protected:
 
   // The motion primitives
   std::vector<MotionPrimitivePtr> prims_;
-  bool have_low_res_prims_;  /// Do we split prims between high/low res?
 
   // Track our time and expansions
   PlanningStatistics planning_statistics_;

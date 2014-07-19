@@ -59,7 +59,11 @@ struct SBPLPlanningParams
     field_origin_z(0.0),
     planning_link_sphere_radius(0.05),
     angle_discretization(angles::from_degrees(1)),
-    planner_params(60)
+    planner_params(60),
+    use_joint_snap(true),
+    joint_snap_thresh(0.1),
+    use_xyzrpy_snap(true),
+    use_rpy_snap(true)
   {
   }
 
@@ -88,6 +92,10 @@ struct SBPLPlanningParams
 
   // Motion Primitives
   std::vector<MotionPrimitivePtr> prims;
+  bool use_joint_snap;
+  double joint_snap_thresh;
+  bool use_xyzrpy_snap;
+  bool use_rpy_snap;
 
   bool init(ros::NodeHandle& nh)
   {
@@ -95,21 +103,36 @@ struct SBPLPlanningParams
     nh.param("env/use_bfs", use_bfs, true);
 
     // Motion Primitives
-    for (int i = 0; i < 7; ++i)
+    for (int i = 0; i < 4; ++i)
     {
       // TODO: replace this hack with a real loader of parameters
       std::vector<double> action(7,0.0);
 
-      action[i] = angles::from_degrees(4);
-      MotionPrimitivePtr s1(new StaticMotionPrimitive(action));
+      action[i] = angles::from_degrees(8);
+      MotionPrimitivePtr s1(new StaticMotionPrimitive(action, 0.2));
       prims.push_back(s1);
 
       action[i] = -action[i];
-      MotionPrimitivePtr s2(new StaticMotionPrimitive(action));
+      MotionPrimitivePtr s2(new StaticMotionPrimitive(action, 0.2));
+      prims.push_back(s2);
+    }
+    for (int i = 0; i < 7; ++i)
+    {
+      std::vector<double> action(7,0.0);
+
+      action[i] = angles::from_degrees(4);
+      MotionPrimitivePtr s1(new StaticMotionPrimitive(action, -1., 0.2));
+      prims.push_back(s1);
+
+      action[i] = -action[i];
+      MotionPrimitivePtr s2(new StaticMotionPrimitive(action, -1., 0.2));
       prims.push_back(s2);
     }
 
-    // TODO: add complex MPs
+    // Adaptive Motion Primitives
+    nh.param("prim/use_joint_snap", use_joint_snap, true);
+    nh.param("prim/use_xyzrpy_snap", use_xyzrpy_snap, true);
+    nh.param("prim/use_rpy_snap", use_rpy_snap, true);
 
     // Planner
     nh.param("planner/initial_epsilon", planner_params.initial_eps, 5.0);
@@ -133,6 +156,7 @@ struct SBPLPlanningParams
     ROS_INFO_NAMED(stream," ");
     ROS_INFO_NAMED(stream,"Environment parameters:");
     ROS_INFO_NAMED(stream,"%40s: %s", "Use BFS", use_bfs ? "yes" : "no");
+    // TODO: print motion primitives
     ROS_INFO_NAMED(stream,"Planner parameters:");
     ROS_INFO_NAMED(stream,"%40s: %0.3fm", "Initial epsilon", planner_params.initial_eps);
     ROS_INFO_NAMED(stream,"%40s: %0.3fm", "Final epsilon", planner_params.final_eps);

@@ -41,8 +41,7 @@ namespace sbpl_interface
 {
 
 EnvironmentChain3D::EnvironmentChain3D() :
-  hash_data_(StateID2IndexMapping),
-  have_low_res_prims_(false)
+  hash_data_(StateID2IndexMapping)
 {
 }
 
@@ -135,16 +134,11 @@ void EnvironmentChain3D::GetSuccs(int source_state_ID,
 
   for (size_t i = 0; i < prims_.size(); ++i)
   {
-    // If we have high/low res
-    // TODO distance is specified in cells, needs to be converted from distance in cm?
-    // TODO currently using 2cm, so 10cm/2cm = 5?
-    //if (have_low_res_prims_ && hash_entry->dist <= 5 && prims_[i]->type() == STATIC_LOW_RES)
-    //  continue;
-    //if (have_low_res_prims_ && hash_entry->dist > 5 && prims_[i]->type() == STATIC)
-    //  continue;
+    double dist = params_.field_resolution *
+                  static_cast<double>(getEndEffectorHeuristic(source_state_ID, goal_->stateID));
 
     // Get the successor state, if any
-    if (!prims_[i]->getSuccessorState(source_joint_angles, &succ_joint_angles))
+    if (!prims_[i]->getSuccessorState(source_joint_angles, &succ_joint_angles, dist))
       continue;
 
     // Test for collisions along path, joint limits, path constraints, etc.
@@ -170,8 +164,7 @@ ROS_INFO("Evaluating: %d %d %d %d %d %d %d, with heuristic %d", hash_entry->coor
 
     // TODO: previous code had a bunch of "interpolateAndCollisionCheck" is that needed?
     EnvChain3dHashEntry* succ_hash_entry = NULL;
-    if (isStateGoal(succ_joint_angles)
-         || (getEndEffectorHeuristic(xyz[0], xyz[1], xyz[2]) < 2 ))  // TODO: remove this hack once IK solver is added
+    if (isStateGoal(succ_joint_angles))
     {
       ROS_INFO("Successor state is goal!");
       succ_hash_entry = goal_;
@@ -218,8 +211,6 @@ void EnvironmentChain3D::SetAllPreds(CMDPSTATE* state)
 void EnvironmentChain3D::addMotionPrimitive(MotionPrimitivePtr& mp)
 {
   prims_.push_back(mp);
-  if (mp->type() == STATIC_LOW_RES)
-    have_low_res_prims_ = true;
 }
 
 bool EnvironmentChain3D::isStateToStateValid(const std::vector<double>& start,

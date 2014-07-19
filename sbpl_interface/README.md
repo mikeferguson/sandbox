@@ -3,13 +3,13 @@
 This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
 
 ## Status (in order of expected/anticipated severeness)
- * Snap to XYZRPY, Snap to RPY are not implemented.
- * Performs no path shortening or filtering/smoothing.
- * Motion Primitives are hard coded, not loaded from any sort of parameter/file.
+ * Performs no path shortening or filtering/smoothing. (sbpl_planning_context.cpp)
+ * Motion Primitives are hard coded, not loaded from any sort of parameter/file. (sbpl_planner_params.h)
  * There is no smoothness cost assigned to motion primitive transitions.
  * Lacks visualization:
    * Need a publisher for BFS and/or distance field
    * Visualization of expanded states?
+ * Snap to XYZRPY, Snap to RPY are not implemented (there is snap_to_joint, which works for joint-space requests)
  * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
  * Distance field is only used for BFS, not used for collision checking (also wasteful)
  * BUG: Goal state retains angles from first assignment -- this will be a problem when using pose constraints rather than joint constraints
@@ -51,3 +51,7 @@ ROS MoveIt Existing Interface
    See (https://github.com/ros-planning/moveit_core/commit/e1cb349ecfd2dad8b61d1b0d3717036175ce61ba).
    Also disallows the use of BFS (which makes the planner really slow).
    Although it is duplicating data and not nearly as nice -- maybe we just use the regular collision world and get rid of this param?
+
+## Future
+
+ * Support multiple goals -- especially for pick and place?

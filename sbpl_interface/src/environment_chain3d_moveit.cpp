@@ -104,7 +104,8 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     return false;
   }
 
-  // Setup motion primitives
+  // Setup basic motion primitives
+  // (advanced ones will be added later based on goal constraints)
   for (size_t i = 0; i < params_.prims.size(); ++i)
   {
     addMotionPrimitive(params_.prims[i]);
@@ -175,6 +176,15 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     for (size_t i=0; i<goal_coords.size(); ++i)
       dbg_ss << goal_coords[i] << " ";
     ROS_INFO_STREAM("[Goal coords] " << dbg_ss.str());
+
+    // Planning in joint space -- should add a snap to joints primitive
+    if (params_.use_joint_snap)
+    {
+      MotionPrimitivePtr snap(new SnapToJointMotionPrimitive(goal_joint_values,
+                                                             params_.joint_snap_thresh));
+      addMotionPrimitive(snap);
+      ROS_INFO("Added snap motion prim");
+    }
   }
   else
   {
