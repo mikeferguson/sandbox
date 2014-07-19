@@ -59,6 +59,7 @@ struct SBPLPlanningParams
     field_origin_z(0.0),
     planning_link_sphere_radius(0.05),
     angle_discretization(angles::from_degrees(1)),
+    interpolation_distance(angles::from_degrees(2)),
     planner_params(60),
     use_joint_snap(true),
     joint_snap_thresh(0.1),
@@ -87,6 +88,8 @@ struct SBPLPlanningParams
   double planning_link_sphere_radius;  /// radius of sphere used to approximate point gripper for bfs heuristic
   double angle_discretization;  /// How is joint space chopped up in the discrete world?
 
+  double interpolation_distance;
+
   // Planner
   ReplanParams planner_params;
 
@@ -101,6 +104,7 @@ struct SBPLPlanningParams
   {
     // Env
     nh.param("env/use_bfs", use_bfs, true);
+    nh.param("env/interpolation_distance", interpolation_distance, interpolation_distance);
 
     // Motion Primitives
     for (int i = 0; i < 4; ++i)

@@ -286,7 +286,7 @@ bool EnvironmentChain3DMoveIt::isStateToStateValid(const std::vector<double>& st
                                                    const std::vector<double>& end)
 {
   // Update robot_state
-  state_->setJointGroupPositions(joint_model_group_, start);
+  state_->setJointGroupPositions(joint_model_group_, end);
   state_->update();
 
   // Ensure path constraints
@@ -294,23 +294,9 @@ bool EnvironmentChain3DMoveIt::isStateToStateValid(const std::vector<double>& st
   if (!con_res.satisfied)
     return false;
 
-  ros::WallTime before_coll = ros::WallTime::now();
-
   // Ensure collision free
-  collision_detection::CollisionRequest req;
-  collision_detection::CollisionResult res;
-  req.group_name = planning_group_;
-  planning_scene_->checkCollision(req, res, *state_);
-
-  // Update profiling
-  ros::WallDuration dur(ros::WallTime::now() - before_coll);
-  planning_statistics_.total_coll_check_time_ += dur;
-  planning_statistics_.coll_checks_++;
-
-  if (res.collision)
-    return false;
-
-  return true;
+  std::vector<std::vector<double> > unused;
+  return interpolateAndCollisionCheck(start, end, unused);
 }
 
 bool EnvironmentChain3DMoveIt::isStateGoal(const std::vector<double>& angles)
@@ -368,6 +354,91 @@ int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int x, int y, int z)
                                        goal_->xyz[0], goal_->xyz[1], goal_->xyz[2]);
     return static_cast<int>(dist * params_.field_resolution * params_.cost_per_meter);
   }
-}    
+}
+
+// helper for interpolateAndCollisionCheck
+int getJointDistanceIntegerMax(const std::vector<double>& angles1,
+                               const std::vector<double>& angles2,
+                               double delta)
+{
+  if (angles1.size() != angles2.size())
+  {
+    ROS_ERROR("getJointDistanceIntegerMax: Angles aren't the same size!");
+    return INT_MAX;
+  }
+
+  int max_dist = 0;
+  for (size_t i = 0; i < angles1.size(); i++)
+  {
+    int dist = floor(fabs(angles2[i]-angles1[i])/delta);
+    if (i == 4 || i == 6)
+    {
+      // Hack -- continuous joints TODO: make this proper
+      dist = floor(fabs(angles::shortest_angular_distance(angles1[i],angles2[i]))/delta);
+    }
+    if (dist > max_dist)
+      max_dist = dist;
+  }
+  return max_dist;
+}
+
+bool EnvironmentChain3DMoveIt::interpolateAndCollisionCheck(
+    const std::vector<double> angles1,
+    const std::vector<double> angles2,
+    std::vector<std::vector<double> >& state_values)
+{
+  state_values.clear();
+
+  robot_state::RobotStatePtr rs_1(new robot_state::RobotState(*state_));
+  robot_state::RobotStatePtr rs_2(new robot_state::RobotState(*state_));
+  robot_state::RobotStatePtr rs_temp(new robot_state::RobotState(*state_));
+
+  rs_1->setJointGroupPositions(planning_group_, angles1);
+  rs_2->setJointGroupPositions(planning_group_, angles2);
+  rs_temp->setJointGroupPositions(planning_group_, angles1);
+
+  collision_detection::CollisionRequest req;
+  req.group_name = planning_group_;
+
+  // check end pose for collision before bothering with interpolation
+  {
+    ros::WallTime before_coll = ros::WallTime::now();
+    collision_detection::CollisionResult res;
+    planning_scene_->checkCollision(req, res, *rs_2);
+    planning_statistics_.coll_checks_++;
+    ros::WallDuration dur(ros::WallTime::now()-before_coll);
+    planning_statistics_.total_coll_check_time_ += dur;
+    if (res.collision)
+      return false;
+  }
+
+  int maximum_moves = getJointDistanceIntegerMax(angles1, angles2, params_.interpolation_distance);
+
+  for (int i = 1; i < maximum_moves; ++i)
+  {
+    rs_1->interpolate(*rs_2,
+                      (1.0/static_cast<double>(maximum_moves))*i,
+                      *rs_temp);
+    // interpolation puts the result into a dirty state
+    rs_temp->update();
+
+    // We already checked rs_2, don't check again
+    if (i != maximum_moves-1)
+    {
+      ros::WallTime before_coll = ros::WallTime::now();
+      collision_detection::CollisionResult res;
+      planning_scene_->checkCollision(req, res, *rs_temp);
+      planning_statistics_.coll_checks_++;
+      ros::WallDuration dur(ros::WallTime::now()-before_coll);
+      planning_statistics_.total_coll_check_time_ += dur;
+      if (res.collision)
+        return false;
+    }
+
+    state_values.resize(state_values.size()+1);
+    rs_temp->copyJointGroupPositions(planning_group_, state_values.back());
+  }
+  return true;
+}
 
 }  // namespace sbpl_interface

@@ -78,6 +78,11 @@ protected:
   /** @brief The heuristic based on BFS. */
   virtual int getEndEffectorHeuristic(int x, int y, int z);
 
+  /** @brief Interpolate between two states and collision check along the way. */
+  bool interpolateAndCollisionCheck(const std::vector<double> angles1,
+                                    const std::vector<double> angles2,
+                                    std::vector< std::vector<double> >& state_values);
+
   planning_scene::PlanningSceneConstPtr planning_scene_;
   robot_state::RobotStatePtr state_;
 
