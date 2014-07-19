@@ -130,7 +130,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   }
 
   trajectory_msgs::JointTrajectory traj;
-  if (!env_chain->populateTrajectoryFromStateIDSequence(solution_state_ids, traj))
+  if (!env_chain->populateTrajectoryFromStateIDSequence(solution_state_ids, mres.trajectory.joint_trajectory))
   {
     ROS_ERROR("Success but path bad");
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN;
@@ -138,9 +138,13 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   }
 
   // Try shortcutting the path
-  env_chain->attemptShortcut(traj, mres.trajectory.joint_trajectory);
-  ROS_INFO("Planned Path is %d points", static_cast<int>(traj.points.size()));
-  ROS_INFO("Shortcut Path is %d points", static_cast<int>(mres.trajectory.joint_trajectory.points.size()));
+  if (sbpl_params_.attempt_shortcut)
+  {
+    trajectory_msgs::JointTrajectory traj = mres.trajectory.joint_trajectory;
+    ROS_INFO("Planned Path is %d points", static_cast<int>(traj.points.size()));
+    env_chain->attemptShortcut(traj, mres.trajectory.joint_trajectory);
+  }
+  ROS_INFO("Path is %d points", static_cast<int>(mres.trajectory.joint_trajectory.points.size()));
 
   last_planning_statistics_ = env_chain->getPlanningStatistics();
   last_planning_statistics_.total_planning_time_ = ros::WallDuration(el);

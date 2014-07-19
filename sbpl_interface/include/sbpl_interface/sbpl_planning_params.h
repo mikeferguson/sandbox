@@ -59,6 +59,7 @@ struct SBPLPlanningParams
     field_origin_z(0.0),
     planning_link_sphere_radius(0.05),
     angle_discretization(angles::from_degrees(1)),
+    attempt_shortcut(true),
     interpolation_distance(angles::from_degrees(2)),
     planner_params(60),
     use_joint_snap(true),
@@ -86,9 +87,10 @@ struct SBPLPlanningParams
 
   // Other
   double planning_link_sphere_radius;  /// radius of sphere used to approximate point gripper for bfs heuristic
-  double angle_discretization;  /// How is joint space chopped up in the discrete world?
+  double angle_discretization;  /// how is joint space chopped up in the discrete world?
 
-  double interpolation_distance;
+  bool attempt_shortcut;  /// should we try to shortcut the path?
+  double interpolation_distance;  /// for collision checking and shortcutting, how far apart can poses be?
 
   // Planner
   ReplanParams planner_params;
@@ -103,7 +105,8 @@ struct SBPLPlanningParams
   bool init(ros::NodeHandle& nh)
   {
     // Env
-    nh.param("env/use_bfs", use_bfs, true);
+    nh.param("env/use_bfs", use_bfs, use_bfs);
+    nh.param("env/attempt_shortcut", attempt_shortcut, attempt_shortcut);
     nh.param("env/interpolation_distance", interpolation_distance, interpolation_distance);
 
     // Motion Primitives
@@ -134,9 +137,9 @@ struct SBPLPlanningParams
     }
 
     // Adaptive Motion Primitives
-    nh.param("prim/use_joint_snap", use_joint_snap, true);
-    nh.param("prim/use_xyzrpy_snap", use_xyzrpy_snap, true);
-    nh.param("prim/use_rpy_snap", use_rpy_snap, true);
+    nh.param("prim/use_joint_snap", use_joint_snap, use_joint_snap);
+    nh.param("prim/use_xyzrpy_snap", use_xyzrpy_snap, use_xyzrpy_snap);
+    nh.param("prim/use_rpy_snap", use_rpy_snap, use_rpy_snap);
 
     // Planner
     nh.param("planner/initial_epsilon", planner_params.initial_eps, 5.0);
@@ -160,6 +163,8 @@ struct SBPLPlanningParams
     ROS_INFO_NAMED(stream," ");
     ROS_INFO_NAMED(stream,"Environment parameters:");
     ROS_INFO_NAMED(stream,"%40s: %s", "Use BFS", use_bfs ? "yes" : "no");
+    ROS_INFO_NAMED(stream,"%40s: %s", "Attempt Shortcut", attempt_shortcut ? "yes" : "no");
+    ROS_INFO_NAMED(stream,"%40s: %0.3frad", "Interpolation distance", interpolation_distance);
     // TODO: print motion primitives
     ROS_INFO_NAMED(stream,"Planner parameters:");
     ROS_INFO_NAMED(stream,"%40s: %0.3fm", "Initial epsilon", planner_params.initial_eps);
