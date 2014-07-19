@@ -425,7 +425,7 @@ bool EnvironmentChain3DMoveIt::interpolateAndCollisionCheck(
 
   int maximum_moves = getJointDistanceIntegerMax(angles1, angles2, params_.interpolation_distance);
 
-  // Don't collision check or include endpoints
+  // Don't collision check endpoints
   for (int i = 1; i < maximum_moves-1; ++i)
   {
     rs_1->interpolate(*rs_2,
@@ -440,6 +440,8 @@ bool EnvironmentChain3DMoveIt::interpolateAndCollisionCheck(
     state_values.resize(state_values.size()+1);
     rs_temp->copyJointGroupPositions(planning_group_, state_values.back());
   }
+
+  state_values.push_back(angles2);
   return true;
 }
 
