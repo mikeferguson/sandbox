@@ -138,10 +138,10 @@ void EnvironmentChain3D::GetSuccs(int source_state_ID,
     // If we have high/low res
     // TODO distance is specified in cells, needs to be converted from distance in cm?
     // TODO currently using 2cm, so 10cm/2cm = 5?
-    if (have_low_res_prims_ && hash_entry->dist <= 5 && prims_[i]->type() == STATIC_LOW_RES)
-      continue;
-    if (have_low_res_prims_ && hash_entry->dist > 5 && prims_[i]->type() == STATIC)
-      continue;
+    //if (have_low_res_prims_ && hash_entry->dist <= 5 && prims_[i]->type() == STATIC_LOW_RES)
+    //  continue;
+    //if (have_low_res_prims_ && hash_entry->dist > 5 && prims_[i]->type() == STATIC)
+    //  continue;
 
     // Get the successor state, if any
     if (!prims_[i]->getSuccessorState(source_joint_angles, &succ_joint_angles))
@@ -159,9 +159,19 @@ void EnvironmentChain3D::GetSuccs(int source_state_ID,
     // Get coord
     convertJointAnglesToCoord(succ_joint_angles, succ_coord);
 
+ROS_INFO("Evaluating: %d %d %d %d %d %d %d, with heuristic %d", hash_entry->coord[0],
+                                                                hash_entry->coord[1],
+                                                                hash_entry->coord[2],
+                                                                hash_entry->coord[3],
+                                                                hash_entry->coord[4],
+                                                                hash_entry->coord[5],
+                                                                hash_entry->coord[6],
+                                                                getEndEffectorHeuristic(source_state_ID, goal_->stateID));
+
     // TODO: previous code had a bunch of "interpolateAndCollisionCheck" is that needed?
     EnvChain3dHashEntry* succ_hash_entry = NULL;
-    if (isStateGoal(succ_joint_angles))
+    if (isStateGoal(succ_joint_angles)
+         || (getEndEffectorHeuristic(xyz[0], xyz[1], xyz[2]) < 2 ))  // TODO: remove this hack once IK solver is added
     {
       ROS_INFO("Successor state is goal!");
       succ_hash_entry = goal_;
@@ -234,12 +244,18 @@ bool EnvironmentChain3D::getEndEffectorCoord(const std::vector<double>& angles, 
 int EnvironmentChain3D::calculateCost(EnvChain3dHashEntry* HashEntry1, EnvChain3dHashEntry* HashEntry2)
 {
   // TODO: apparently this is what both sbpl_manipulation and the former arm_nav/moveit interfaces do...
-  return 1000;
+  return 1;
 }
 
 int EnvironmentChain3D::getEndEffectorHeuristic(int FromStateID, int ToStateID)
 {
-  ROS_ERROR("EnvironmentChain3D has no getEndEffectorHeuristic defined");
+  EnvChain3dHashEntry* from = hash_data_.state_ID_to_coord_table_[FromStateID];
+  return getEndEffectorHeuristic(from->xyz[0], from->xyz[1], from->xyz[2]);
+}
+
+int EnvironmentChain3D::getEndEffectorHeuristic(int x, int y, int z)
+{
+  ROS_ERROR("EnvironmentChain3D has no getEndEffectorHeuristic(x,y,z) defined.");
   throw new SBPL_Exception();
 }
 

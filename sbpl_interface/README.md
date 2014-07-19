@@ -2,17 +2,21 @@
 
 This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
 
-## Status
- * Performs no path shortening
- * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
- * Distance field is only used for BFS, not used for collision checking.
- * Motion Primitives are hard coded, not loaded from any sort of parameter/file.
+## Status (in order of expected/anticipated severeness)
  * Snap to XYZRPY, Snap to RPY are not implemented.
+ * Performs no path shortening or filtering/smoothing.
+ * Motion Primitives are hard coded, not loaded from any sort of parameter/file.
+ * There is no smoothness cost assigned to motion primitive transitions.
+ * Lacks visualization:
+   * Need a publisher for BFS and/or distance field
+   * Visualization of expanded states?
+ * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
+ * Distance field is only used for BFS, not used for collision checking (also wasteful)
+ * BUG: Goal state retains angles from first assignment -- this will be a problem when using pose constraints rather than joint constraints
 
 ## Required Components
- * PlanningData
-   * This holds the actual graph, in the form of a hash table, can be taken as is.
- * BFS
+ * PlanningData - the actual graph data structure
+ * BFS - the heuristic data structure
  * Environment (plus statistics and parameters)
    * Needs access to planning_scene, robot_state
    * Create distance field from robot state for evaluating cell cost - C_cell(s')
@@ -28,13 +32,15 @@ This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
    * Snap to RPY (orientation solver)
      * This doesn't appear to be used at first look in sbpl_motion_planning, however,
        it's baked into the computeIK call.
-   * Loader utilities to create from file
+   * Loader utilities to create primitives from file
 
 ## Other Notes
 
-Cost:
+Cost as defined in the paper is:
 
     C(s,s') = C_cell(s') + W_action * C_action(s,s') + W_smooth * C_smooth(s,s')
+
+Currently, this cost is simply 1 for all actions and all smoothness... :(
 
 Heuristic:
 

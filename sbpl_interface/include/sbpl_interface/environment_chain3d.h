@@ -177,7 +177,8 @@ struct PlanningStatistics
   {
     ROS_INFO_STREAM("Distance Field Setup Time: " << distance_field_setup_time_.toSec() << ". " <<
                     "Occupied: " << distance_field_percent_occupied_ << "%");
-    ROS_INFO_STREAM("Heuristic Time: " << heuristic_setup_time_.toSec());
+    ROS_INFO_STREAM("Heuristic Setup Time: " << heuristic_setup_time_.toSec());
+    ROS_INFO_STREAM("Heuristic Run Time: " << heuristic_run_time_.toSec());
     ROS_INFO_STREAM("Expansions: " << total_expansions_ << ". " <<
                     "Average Time: " << total_expansion_time_.toSec()/static_cast<double>(total_expansions_) << "s " <<
                     "Freq: " << 1.0/(total_expansion_time_.toSec()/static_cast<double>(total_expansions_)) << "hz");
@@ -318,6 +319,7 @@ protected:
 
   /** @brief The heuristic */
   virtual int getEndEffectorHeuristic(int FromStateID, int ToStateID);
+  virtual int getEndEffectorHeuristic(int x, int y, int z);
 
   void convertJointAnglesToCoord(const std::vector<double> &angle, std::vector<int> &coord);
   void convertCoordToJointAngles(const std::vector<int> &coord, std::vector<double> &angles);

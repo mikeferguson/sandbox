@@ -76,7 +76,7 @@ protected:
                                           int& x, int& y, int& z);
 
   /** @brief The heuristic based on BFS. */
-  virtual int getEndEffectorHeuristic(int FromStateID, int ToStateID);
+  virtual int getEndEffectorHeuristic(int x, int y, int z);
 
   planning_scene::PlanningSceneConstPtr planning_scene_;
   robot_state::RobotStatePtr state_;

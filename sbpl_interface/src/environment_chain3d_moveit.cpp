@@ -343,22 +343,18 @@ bool EnvironmentChain3DMoveIt::continuousXYZtoDiscreteXYZ(
   return true;
 }
 
-int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int FromStateID, int ToStateID)
+int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int x, int y, int z)
 {
   boost::this_thread::interruption_point();
-  EnvChain3dHashEntry* from = hash_data_.state_ID_to_coord_table_[FromStateID];
-
   if (params_.use_bfs)
   {
     // Return the BFS cost to goal
-    return static_cast<int>(bfs_->getDistance(from->xyz[0],
-                                              from->xyz[1],
-                                              from->xyz[2])) * params_.cost_per_cell;
+    return static_cast<int>(bfs_->getDistance(x,y,z)) * params_.cost_per_cell;
   }
   else
   {
     // Return euclidean distance to goal
-    double dist = getEuclideanDistance(from->xyz[0], from->xyz[1], from->xyz[2],
+    double dist = getEuclideanDistance(x, y, z,
                                        goal_->xyz[0], goal_->xyz[1], goal_->xyz[2]);
     return static_cast<int>(dist * params_.field_resolution * params_.cost_per_meter);
   }
