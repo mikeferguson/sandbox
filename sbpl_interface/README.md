@@ -79,6 +79,38 @@ During expansion:
 Thus, costs come only through GetSuccs, and heuristic comes only through GetGoalHeuristic
 (or GetStartHeuristic if doing backwards planning, but we are not).
 
+The costs used in various portions of the planners appear to be mostly magical,
+and often hard coded. The most up to date planner is the sbpl_manipulation package
+on Github, but there are also older versions on the sbpl.net site. All costs are
+integers. A summary of costs follows:
+
+ * sbpl_manipulation
+    * prm_->cost_per_cell_ = 100 (initialized to 1 in planning params,
+      but computeCostPerCell() is called in initEnvironment, setting it to 100)
+    * prm_->cost_multiplier_ = 1000
+    * prm_->cost_per_meter_ = 50
+    * Available Heuristics -- used to get h(s)
+      * bfs_cost_to_goal = distance * prm_->cost_per_cell_
+      * euclidean_cost_to_goal = distance_in_meters * prm_->cost_per_meter_
+    * GetSuccs calls the cost() function:
+      * which just returns prm_->cost_multiplier_
+    * There are functions defined for the action cost, but they appear unused?
+      * Does not use forearm roll or wrist roll for action cost computation
+      * Finds max difference between two actions
+      * cost = (max_diff/prm_->max_mprim_offset_) * prm_->cost_multiplier_
+ * Diamondback/Electric (arm_navigation) versions
+   * Mostly the same as above.
+   * cost() has choice of uniform, or cost based on distance to nearest obstacle
+   * defines 4 different ranges of closeness, each with own scale:
+     * dist less than 7 = cost_multiplier_ * 12
+     * dist less than 12 = cost_multiplier_ * 7
+     * dist less than 17 = cost_multiplier_ * 2
+     * all others = cost_multiplier_
+ * Fuerte/MoveIt version
+   * Mostly the same as Diamondback/Electric
+   * IK/RPY solvers return extra motion primitive cost which is added to the standard cost.
+   * In each case, these extra costs use the action cost method described above.
+
 ## Future
 
  * Support multiple goals -- especially for pick and place?
