@@ -47,34 +47,34 @@ Heuristic:
 
 ARAPlanner implementation has the following fields (and others):
 
-        struct ARASEARCHSTATEDATA
-        {
-          MDPState * state;
-          unsigned int v;   // best cost to get from start to this state -- set equal to g during expansion of the state
-          unsigned int g;   // best cost to get from start to this state -- assigned during UpdateSucc
-          int h;            // this is the heuristic value -- gets assigned as state is initialized
-          MDPState * bestnextstate;
-        };
+    struct ARASEARCHSTATEDATA
+    {
+      MDPState * state;
+      unsigned int v;   // best cost to get from start to this state -- set equal to g during expansion of the state
+      unsigned int g;   // best cost to get from start to this state -- assigned during UpdateSucc
+      int h;            // this is the heuristic value -- gets assigned as state is initialized
+      MDPState * bestnextstate;
+    };
 
 During expansion:
 
-        UpdateSucc(state, space)
-        {
-          env->GetSuccs(state, [succ], [cost])
-          for (succ)
-          {
-            cost = cost of succ
-            if (new state)
-              ReinitializeSearchStateInfo(succ)
-              // sets g = v = INF
-              // sets h = GetGoalHeuristic(succ)
-            if (succ->g > state->v + cost)
-              succ->g = state->v + cost
-              succ->bestpredstate = state
-              if (succ is in open set)
-                add succ to heap with cost (g + eps * h)
-          }
-        }
+    UpdateSucc(state, space)
+    {
+      env->GetSuccs(state, [succ], [cost])
+      for (succ)
+      {
+        cost = cost of succ
+        if (new state)
+          ReinitializeSearchStateInfo(succ)
+          // sets g = v = INF
+          // sets h = GetGoalHeuristic(succ)
+        if (succ->g > state->v + cost)
+          succ->g = state->v + cost
+          succ->bestpredstate = state
+          if (succ is in open set)
+            add succ to heap with cost (g + eps * h)
+      }
+    }
 
 Thus, costs come only through GetSuccs, and heuristic comes only through GetGoalHeuristic
 (or GetStartHeuristic if doing backwards planning, but we are not).
