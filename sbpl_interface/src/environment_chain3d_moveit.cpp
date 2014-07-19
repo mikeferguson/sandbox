@@ -294,7 +294,11 @@ bool EnvironmentChain3DMoveIt::isStateToStateValid(const std::vector<double>& st
   if (!con_res.satisfied)
     return false;
 
-  // Ensure collision free
+  // Ensure endpoint is collision free
+  if (!isCollisionFree(state_))
+    return false;
+
+  // Ensure collision free along path if start/end are far apart
   std::vector<std::vector<double> > unused;
   return interpolateAndCollisionCheck(start, end, unused);
 }
@@ -382,6 +386,25 @@ int getJointDistanceIntegerMax(const std::vector<double>& angles1,
   return max_dist;
 }
 
+bool EnvironmentChain3DMoveIt::isCollisionFree(robot_state::RobotStatePtr rs)
+{
+  ros::WallTime before = ros::WallTime::now();
+
+  collision_detection::CollisionRequest req;
+  collision_detection::CollisionResult res;
+  req.group_name = planning_group_;
+
+  planning_scene_->checkCollision(req, res, *rs);
+  planning_statistics_.coll_checks_++;
+
+  planning_statistics_.total_coll_check_time_ += ros::WallTime::now() - before;
+
+  if (res.collision)
+    return false;
+
+  return true;
+}
+
 bool EnvironmentChain3DMoveIt::interpolateAndCollisionCheck(
     const std::vector<double> angles1,
     const std::vector<double> angles2,
@@ -400,21 +423,10 @@ bool EnvironmentChain3DMoveIt::interpolateAndCollisionCheck(
   collision_detection::CollisionRequest req;
   req.group_name = planning_group_;
 
-  // check end pose for collision before bothering with interpolation
-  {
-    ros::WallTime before_coll = ros::WallTime::now();
-    collision_detection::CollisionResult res;
-    planning_scene_->checkCollision(req, res, *rs_2);
-    planning_statistics_.coll_checks_++;
-    ros::WallDuration dur(ros::WallTime::now()-before_coll);
-    planning_statistics_.total_coll_check_time_ += dur;
-    if (res.collision)
-      return false;
-  }
-
   int maximum_moves = getJointDistanceIntegerMax(angles1, angles2, params_.interpolation_distance);
 
-  for (int i = 1; i < maximum_moves; ++i)
+  // Don't collision check or include endpoints
+  for (int i = 1; i < maximum_moves-1; ++i)
   {
     rs_1->interpolate(*rs_2,
                       (1.0/static_cast<double>(maximum_moves))*i,
@@ -422,18 +434,8 @@ bool EnvironmentChain3DMoveIt::interpolateAndCollisionCheck(
     // interpolation puts the result into a dirty state
     rs_temp->update();
 
-    // We already checked rs_2, don't check again
-    if (i != maximum_moves-1)
-    {
-      ros::WallTime before_coll = ros::WallTime::now();
-      collision_detection::CollisionResult res;
-      planning_scene_->checkCollision(req, res, *rs_temp);
-      planning_statistics_.coll_checks_++;
-      ros::WallDuration dur(ros::WallTime::now()-before_coll);
-      planning_statistics_.total_coll_check_time_ += dur;
-      if (res.collision)
-        return false;
-    }
+    if (!isCollisionFree(rs_temp))
+      return false;
 
     state_values.resize(state_values.size()+1);
     rs_temp->copyJointGroupPositions(planning_group_, state_values.back());

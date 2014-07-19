@@ -87,6 +87,9 @@ protected:
   /** @brief The heuristic based on BFS. */
   virtual int getEndEffectorHeuristic(int x, int y, int z);
 
+  /** @brief Collision check one robot state. */
+  bool isCollisionFree(robot_state::RobotStatePtr rs);
+
   /** @brief Interpolate between two states and collision check along the way. */
   bool interpolateAndCollisionCheck(const std::vector<double> angles1,
                                     const std::vector<double> angles2,
