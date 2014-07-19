@@ -44,6 +44,7 @@
 #include <moveit/robot_model/joint_model_group.h>
 #include <moveit_msgs/MotionPlanRequest.h>
 #include <moveit_msgs/MotionPlanResponse.h>
+#include <visualization_msgs/Marker.h>
 
 namespace sbpl_interface
 {
@@ -66,6 +67,9 @@ public:
   /** @brief Try to clean up the trajectory. */
   void attemptShortcut(const trajectory_msgs::JointTrajectory& traj_in,
                        trajectory_msgs::JointTrajectory& traj_out);
+
+  /** @brief Get a visualization of the expanded state space */
+  void getExpandedCellsVisualization(visualization_msgs::Marker& marker) const;
 
 protected:
   /** @brief Do collision checking, check path & joint limit constraints. */

@@ -127,6 +127,7 @@ void EnvironmentChain3D::GetSuccs(int source_state_ID,
 
   // Get info on source state
   EnvChain3dHashEntry* hash_entry = hash_data_.state_ID_to_coord_table_[source_state_ID];
+  hash_entry->expanded = true;
 
   std::vector<double> source_joint_angles = hash_entry->angles;
   std::vector<double> succ_joint_angles;
@@ -166,7 +167,6 @@ void EnvironmentChain3D::GetSuccs(int source_state_ID,
     EnvChain3dHashEntry* succ_hash_entry = NULL;
     if (isStateGoal(succ_joint_angles))
     {
-      ROS_INFO("Successor state is goal!");
       succ_hash_entry = goal_;
     }
     else

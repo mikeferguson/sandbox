@@ -71,6 +71,8 @@ public:
 
 protected:
   ros::NodeHandle ph_;
+  // TODO move this upstream so we don't thrash re-creating contexts
+  ros::Publisher pub_;
 
   robot_model::RobotModelConstPtr robot_model_;
   sbpl_interface::SBPLPlanningParams sbpl_params_;

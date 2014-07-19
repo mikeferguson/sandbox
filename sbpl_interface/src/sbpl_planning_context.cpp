@@ -49,6 +49,7 @@ SBPLPlanningContext::SBPLPlanningContext(const std::string& name, const std::str
   PlanningContext(name, group),
   ph_("~")
 {
+  pub_ = ph_.advertise<visualization_msgs::Marker>("explored", 1, true /* latched */);
 }
 
 SBPLPlanningContext::~SBPLPlanningContext()
@@ -108,9 +109,15 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   // Print stats
   ROS_INFO_STREAM("planner->replan: " << b_ret << ", planning time: " << el);
 
+  // TODO: move this upstream somehow
+  visualization_msgs::Marker marker;
+  env_chain->getExpandedCellsVisualization(marker);
+  pub_.publish(marker);
+
   if (!b_ret)
   {
     ROS_ERROR("Planning Failed");
+    env_chain->getPlanningStatistics().print();
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
     return false;
   }
@@ -129,7 +136,6 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN;
     return false;
   }
-
 
   // Try shortcutting the path
   env_chain->attemptShortcut(traj, mres.trajectory.joint_trajectory);
