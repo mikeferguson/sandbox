@@ -172,6 +172,8 @@ struct PlanningStatistics
   ros::WallDuration total_coll_check_time_;
 
   ros::WallDuration total_planning_time_;
+  ros::WallDuration shortcutting_time_;
+  ros::WallDuration total_time_;
 
   void print()
   {
@@ -184,6 +186,9 @@ struct PlanningStatistics
                     "Freq: " << 1.0/(total_expansion_time_.toSec()/static_cast<double>(total_expansions_)) << "hz");
     ROS_INFO_STREAM("Total collision checks " << coll_checks_ << ". " <<
                     "Freq: " << 1.0/(total_coll_check_time_.toSec()/static_cast<double>(coll_checks_)) << "hz");
+    ROS_INFO_STREAM("Total Planning Time: " << total_planning_time_.toSec());
+    ROS_INFO_STREAM("Total Shortcut Time: " << shortcutting_time_.toSec());
+    ROS_INFO_STREAM("Total Time: " << total_time_.toSec());
   }
 };
 

@@ -101,13 +101,12 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   planner->set_goal(env_chain->getGoalID());
 
   // Plan
-  wt = ros::WallTime::now();
+  ros::WallTime plan_wt = ros::WallTime::now();
   bool b_ret = planner->replan(&solution_state_ids, sbpl_params_.planner_params, &solution_cost);
-  double el = (ros::WallTime::now()-wt).toSec();
+  double el = (ros::WallTime::now()-plan_wt).toSec();
 
   // Print stats
   ROS_INFO_STREAM("planner->replan: " << b_ret << ", planning time: " << el);
-  env_chain->getPlanningStatistics().print();
 
   if (!b_ret)
   {
@@ -123,20 +122,25 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
     return false;
   }
 
-  if (!env_chain->populateTrajectoryFromStateIDSequence(solution_state_ids,
-                                                        mres.trajectory.joint_trajectory))
+  trajectory_msgs::JointTrajectory traj;
+  if (!env_chain->populateTrajectoryFromStateIDSequence(solution_state_ids, traj))
   {
     ROS_ERROR("Success but path bad");
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN;
     return false;
   }
 
-  // TODO: revive shortening
-  ROS_INFO("Path is %d points", static_cast<int>(mres.trajectory.joint_trajectory.points.size()));
+
+  // Try shortcutting the path
+  env_chain->attemptShortcut(traj, mres.trajectory.joint_trajectory);
+  ROS_INFO("Planned Path is %d points", static_cast<int>(traj.points.size()));
+  ROS_INFO("Shortcut Path is %d points", static_cast<int>(mres.trajectory.joint_trajectory.points.size()));
 
   last_planning_statistics_ = env_chain->getPlanningStatistics();
   last_planning_statistics_.total_planning_time_ = ros::WallDuration(el);
-  
+  last_planning_statistics_.total_time_ = ros::WallTime::now() - wt;
+  last_planning_statistics_.print();
+
   // Convert  moveit_msgs::MotionPlan::Response to planning_interface::MotionPlanResponse
   res.trajectory_.reset(new robot_trajectory::RobotTrajectory(robot_model_, req.group_name));
   robot_state::RobotState start_state(robot_model_);

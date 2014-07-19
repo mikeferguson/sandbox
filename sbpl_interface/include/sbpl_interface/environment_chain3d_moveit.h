@@ -59,8 +59,13 @@ public:
                           moveit_msgs::MotionPlanResponse& res,
                           SBPLPlanningParams& params);
 
+  /** @brief Get the trajectory. */
   bool populateTrajectoryFromStateIDSequence(const std::vector<int>& state_ids,
                                              trajectory_msgs::JointTrajectory& traj) const;
+
+  /** @brief Try to clean up the trajectory. */
+  void attemptShortcut(const trajectory_msgs::JointTrajectory& traj_in,
+                       trajectory_msgs::JointTrajectory& traj_out);
 
 protected:
   /** @brief Do collision checking, check path & joint limit constraints. */

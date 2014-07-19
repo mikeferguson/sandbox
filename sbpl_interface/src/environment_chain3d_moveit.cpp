@@ -441,4 +441,85 @@ bool EnvironmentChain3DMoveIt::interpolateAndCollisionCheck(
   return true;
 }
 
+void EnvironmentChain3DMoveIt::attemptShortcut(const trajectory_msgs::JointTrajectory& traj_in,
+                                               trajectory_msgs::JointTrajectory& traj_out)
+{
+  ros::WallTime start = ros::WallTime::now();
+  unsigned int last_point_ind = 0;
+  unsigned int current_point_ind = 1;
+  unsigned int last_good_start_ind = 0;
+  unsigned int last_good_end_ind = 1;
+
+  traj_out.joint_names = traj_in.joint_names;
+
+  if (traj_in.points.size() == 1)
+  {
+    traj_out = traj_in;
+    return;
+  }
+
+  traj_out.points.clear();
+  traj_out.points.push_back(traj_in.points.front());
+  std::vector< std::vector<double> > last_good_segment_values;
+
+  // Try to jump some points.
+  while (1)
+  {
+    const trajectory_msgs::JointTrajectoryPoint& start_point = traj_in.points[last_point_ind];
+    const trajectory_msgs::JointTrajectoryPoint& end_point = traj_in.points[current_point_ind];
+    std::vector< std::vector<double> > segment_values;
+
+    // if we can go from start to end then keep going
+    if (interpolateAndCollisionCheck(start_point.positions,
+                                     end_point.positions,
+                                     segment_values))
+    {
+      last_good_start_ind = last_point_ind;
+      last_good_end_ind = current_point_ind;
+      last_good_segment_values = segment_values;
+      current_point_ind++;
+    }
+    else
+    {
+      if (last_good_end_ind-last_good_start_ind == 1)
+      {
+        // start and end are adjacent, copy the end in
+        traj_out.points.push_back(traj_in.points[last_good_end_ind]);
+      }
+      else
+      {
+        // have interpolated points to copy in
+        for (size_t i = 0; i < last_good_segment_values.size(); ++i)
+        {
+          trajectory_msgs::JointTrajectoryPoint jtp;
+          jtp.positions = last_good_segment_values[i];
+          traj_out.points.push_back(jtp);
+        }
+      }
+      last_good_start_ind = last_good_end_ind;
+      last_point_ind = last_good_end_ind;
+      current_point_ind = last_good_end_ind+1;
+      last_good_segment_values.clear();
+    }
+
+    if (current_point_ind >= traj_in.points.size())
+    {
+      // done parsing trajectory, clean up
+      if (last_good_segment_values.size() > 0)
+      {
+        for (size_t i = 0; i < last_good_segment_values.size(); ++i)
+        {
+          trajectory_msgs::JointTrajectoryPoint jtp;
+          jtp.positions = last_good_segment_values[i];
+          traj_out.points.push_back(jtp);
+        }
+      }
+      traj_out.points.push_back(traj_in.points.back());
+      break;
+    }
+  }
+
+  planning_statistics_.shortcutting_time_ = ros::WallTime::now() - start;
+}
+
 }  // namespace sbpl_interface
