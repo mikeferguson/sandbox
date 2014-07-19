@@ -2,9 +2,13 @@
 
 This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
 
-## Status (in order of expected/anticipated severeness)
- * Performs no path shortening or filtering/smoothing. (sbpl_planning_context.cpp)
- * Motion Primitives are hard coded, not loaded from any sort of parameter/file. (sbpl_planner_params.h)
+## TODO (in order of expected/anticipated severeness)
+ * Look into cost function (env3d::calculateCost)
+ * Add path shortening or filtering/smoothing. (sbpl_planning_context.cpp)
+ * Load motion primitives from parameters, with decent defaults if no parameter exists. (sbpl_planner_params.h)
+ * Other things under status:
+
+## Status
  * There is no smoothness cost assigned to motion primitive transitions.
  * Lacks visualization:
    * Need a publisher for BFS and/or distance field

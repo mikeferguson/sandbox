@@ -33,11 +33,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef _MOTION_PRIMITIVES_H_
-#define _MOTION_PRIMITIVES_H_
+#ifndef _MOVEIT_SBPL_INTERFACE_MOTION_PRIMITIVES_H_
+#define _MOVEIT_SBPL_INTERFACE_MOTION_PRIMITIVES_H_
 
 namespace sbpl_interface
 {
+
+#include <vector>
 
 enum motion_primitive_types
 {
@@ -154,8 +156,6 @@ public:
     if (dist > thresh_)
       return false;
 
-    ROS_INFO("SNAP!");
-
     *end = action_;
     return true;
   }
@@ -170,4 +170,4 @@ private:
 
 }  // namespace sbpl_interface
 
-#endif  // _MOTION_PRIMITIVES_H_
+#endif  // _MOVEIT_SBPL_INTERFACE_MOTION_PRIMITIVES_H_
