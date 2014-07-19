@@ -64,7 +64,6 @@ static inline unsigned int intHash(unsigned int key)
 
 struct EnvChain3dHashEntry
 {
-  unsigned char dist;           /// distance to closest obstacle
   int stateID;                  /// hash entry ID number
   int action;                   /// which action in the list was required to get here
   int xyz[3];                   /// tip link coordinates in discrete space
