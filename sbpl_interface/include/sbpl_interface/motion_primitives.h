@@ -165,9 +165,6 @@ private:
   double thresh_;
 };
 
-// TODO: orientation solver primitive
-// TODO: xyzrpy solver primitive
-
 }  // namespace sbpl_interface
 
 #endif  // _MOVEIT_SBPL_INTERFACE_MOTION_PRIMITIVES_H_

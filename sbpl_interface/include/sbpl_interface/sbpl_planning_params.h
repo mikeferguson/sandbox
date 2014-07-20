@@ -105,7 +105,7 @@ struct SBPLPlanningParams
   bool init(ros::NodeHandle& nh)
   {
     // Env
-    nh.param("env/use_bfs", use_bfs, use_bfs);
+    nh.param("env/use_bfs_heuristic", use_bfs, use_bfs);
     nh.param("env/attempt_shortcut", attempt_shortcut, attempt_shortcut);
     nh.param("env/interpolation_distance", interpolation_distance, interpolation_distance);
 
