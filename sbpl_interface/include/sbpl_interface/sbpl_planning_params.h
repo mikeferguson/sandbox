@@ -57,7 +57,7 @@ struct SBPLPlanningParams
     field_origin_x(-0.5),
     field_origin_y(-1.0),
     field_origin_z(0.0),
-    planning_link_sphere_radius(0.05),
+    planning_link_sphere_radius(0.1),
     angle_discretization(angles::from_degrees(1)),
     attempt_shortcut(true),
     interpolation_distance(angles::from_degrees(2)),
@@ -108,6 +108,9 @@ struct SBPLPlanningParams
     nh.param("env/use_bfs", use_bfs, use_bfs);
     nh.param("env/attempt_shortcut", attempt_shortcut, attempt_shortcut);
     nh.param("env/interpolation_distance", interpolation_distance, interpolation_distance);
+
+    // Robot related
+    nh.param("planning_link_sphere_radius", planning_link_sphere_radius, planning_link_sphere_radius);
 
     // Motion Primitives
     for (int i = 0; i < 4; ++i)
