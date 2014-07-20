@@ -11,6 +11,10 @@ This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
  * Snap to XYZRPY, Snap to RPY are not implemented (there is snap_to_joint, which works for joint-space requests)
  * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
  * BUG: Goal state retains angles from first assignment -- this will be a problem when using pose constraints rather than joint constraints
+ * BUG: MotionPlanRequest/allowed_planning_time is ignored
+ * ENHANCEMENT: use MotionPlanRequest/workspace_parameters to define BFS/distance field size, overriding sbpl_params.
+ * ENHANCEMENT: switch planner choice pased on MotionPlanRequest/planner_id
+ * ENHANCEMENT: use num_planning_attempts
 
 ## Required Components
  * PlanningData - the actual graph data structure
