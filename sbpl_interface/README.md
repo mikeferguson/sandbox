@@ -9,6 +9,7 @@ This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
  * Lacks visualization:
    * Need a publisher for BFS and/or distance field
  * Snap to XYZRPY, Snap to RPY are not implemented (there is snap_to_joint, which works for joint-space requests)
+ * Should insert non-group links into distance field (the sbpl_arm_planner does this)
  * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
  * BUG: Goal state retains angles from first assignment -- this will be a problem when using pose constraints rather than joint constraints
  * BUG: MotionPlanRequest/allowed_planning_time is ignored
@@ -117,5 +118,8 @@ integers. A summary of costs follows:
 ## Future
 
  * Support multiple goals -- especially for pick and place?
+   * Push multiple goals into MotionPlanRequest goal_contraints array (message is defined that way).
+   * Update isGoalState to handle the array.
+   * Update BFS to handle multiple start points.
  * Support collision checking in distance field (see MoveIt_experimental CollisionWorldHybrid,
    https://github.com/ros-planning/moveit_core/commit/e1cb349ecfd2dad8b61d1b0d3717036175ce61ba)
