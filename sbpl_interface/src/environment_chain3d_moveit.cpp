@@ -38,6 +38,8 @@
 #include <Eigen/Core>
 #include <sbpl_interface/environment_chain3d_moveit.h>
 #include <moveit/robot_state/conversions.h>
+#include <moveit/robot_model/robot_model.h>
+#include <moveit/robot_model/link_model.h>
 #include <eigen_conversions/eigen_msg.h>
 
 namespace sbpl_interface
@@ -238,8 +240,8 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
                                                           params_.field_resolution,
                                                           params_.field_origin_x, params_.field_origin_y, params.field_origin_z,
                                                           params_.field_z /* max distance, all cells initialize to this */);
-    // Update distance field from planning scene
     // TODO This could be massively improved (especially if we switch to some variation of the hybrid distance field)
+    // Add objects to distance field from planning scene
     collision_detection::WorldConstPtr world = planning_scene_->getWorld();
     std::vector<std::string> objects = world->getObjectIds();
     for (size_t i = 0; i < objects.size(); ++i)
@@ -250,6 +252,22 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
       geometry_msgs::Pose pose;
       tf::poseEigenToMsg(obj->shape_poses_[0], pose);
       field_->addShapeToField(obj->shapes_[0].get(), pose);
+    }
+    // Add field links to distance field
+    for (size_t i = 0; i < params_.field_links.size(); ++i)
+    {
+      const moveit::core::LinkModel* link = state_->getLinkModel(params_.field_links[i]);
+      const Eigen::Affine3d global_t = state_->getGlobalLinkTransform(link->getName());
+      const std::vector<shapes::ShapeConstPtr> shapes = link->getShapes();
+      const EigenSTL::vector_Affine3d shape_poses = link->getCollisionOriginTransforms();
+      for (size_t j = 0; j < shapes.size(); ++j)
+      {
+        Eigen::Affine3d t = global_t * shape_poses[j];
+        geometry_msgs::Pose pose;
+        tf::poseEigenToMsg(t, pose);
+        field_->addShapeToField(shapes[j].get(), pose);
+      }
+      ROS_INFO("Done");
     }
     planning_statistics_.distance_field_setup_time_ = ros::WallTime::now() - distance_start;
 

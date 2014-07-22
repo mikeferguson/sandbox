@@ -47,9 +47,13 @@ namespace sbpl_interface
 struct SBPLPlanningParams
 {
   SBPLPlanningParams() :
-    use_bfs(true),
     cost_per_cell(1),
     cost_per_meter(50),
+    use_bfs(true),
+    angle_discretization(angles::from_degrees(1)),
+    attempt_shortcut(true),
+    interpolation_distance(angles::from_degrees(2)),
+    planning_link_sphere_radius(0.1),
     field_resolution(0.02),
     field_x(2.0),
     field_y(2.0),
@@ -57,10 +61,6 @@ struct SBPLPlanningParams
     field_origin_x(-0.5),
     field_origin_y(-1.0),
     field_origin_z(0.0),
-    planning_link_sphere_radius(0.1),
-    angle_discretization(angles::from_degrees(1)),
-    attempt_shortcut(true),
-    interpolation_distance(angles::from_degrees(2)),
     planner_params(60),
     use_joint_snap(true),
     joint_snap_thresh(0.1),
@@ -70,14 +70,18 @@ struct SBPLPlanningParams
   {
   }
 
-  // Algorithms
-  bool use_bfs;             /// should we use BFS or Euclidean distance heuristic?
-
   // Scoring
   int cost_per_cell;
   int cost_per_meter;
 
-  // Distance Field
+  // Environment
+  bool use_bfs;  /// should we use BFS or Euclidean distance heuristic?
+  double angle_discretization;  /// how is joint space chopped up in the discrete world?
+  bool attempt_shortcut;  /// should we try to shortcut the path?
+  double interpolation_distance;  /// for collision checking and shortcutting, how far apart can poses be?
+  double planning_link_sphere_radius;  /// radius of sphere used to approximate point gripper for bfs heuristic
+
+  // Environment - Distance Field
   double field_resolution;  /// resolution (m/cell) of field
   double field_x;           /// size of the distance field
   double field_y;
@@ -85,13 +89,7 @@ struct SBPLPlanningParams
   double field_origin_x;    /// origin of the distance field
   double field_origin_y;
   double field_origin_z;
-
-  // Other
-  double planning_link_sphere_radius;  /// radius of sphere used to approximate point gripper for bfs heuristic
-  double angle_discretization;  /// how is joint space chopped up in the discrete world?
-
-  bool attempt_shortcut;  /// should we try to shortcut the path?
-  double interpolation_distance;  /// for collision checking and shortcutting, how far apart can poses be?
+  std::vector<std::string> field_links;  // links to add to distance field
 
   // Planner
   ReplanParams planner_params;
@@ -108,11 +106,34 @@ struct SBPLPlanningParams
   {
     // Env
     nh.param("env/use_bfs_heuristic", use_bfs, use_bfs);
+    nh.param("env/angle_discretization", angle_discretization, angle_discretization);
     nh.param("env/attempt_shortcut", attempt_shortcut, attempt_shortcut);
     nh.param("env/interpolation_distance", interpolation_distance, interpolation_distance);
+    nh.param("env/planning_link_sphere_radius", planning_link_sphere_radius, planning_link_sphere_radius);
 
-    // Robot related
-    nh.param("planning_link_sphere_radius", planning_link_sphere_radius, planning_link_sphere_radius);
+    // Distance Field
+    nh.param("env/field/resolution", field_resolution, field_resolution);
+    nh.param("env/field/size_x", field_x, field_x);
+    nh.param("env/field/size_y", field_y, field_y);
+    nh.param("env/field/size_z", field_z, field_z);
+    nh.param("env/field/origin_x", field_origin_x, field_origin_x);
+    nh.param("env/field/origin_y", field_origin_y, field_origin_y);
+    nh.param("env/field/origin_z", field_origin_z, field_origin_z);
+
+    // Robot Links To Insert Into Distance Field
+    if (nh.hasParam("env/field/links"))
+    {
+      field_links.clear();
+      nh.getParam("env/field/links", field_links);
+    }
+
+    // Planner
+    nh.param("planner/initial_epsilon", planner_params.initial_eps, 5.0);
+    nh.param("planner/final_epsilon", planner_params.final_eps, 1.0);
+    nh.param("planner/decrement_epsilon", planner_params.dec_eps, 0.2);
+    nh.param("planner/return_first_solution", planner_params.return_first_solution, false);
+    nh.param("planner/max_time", planner_params.max_time, 60.0);
+    nh.param("planner/repair_time", planner_params.repair_time, -1.0);
 
     // Motion Primitives
     for (int i = 0; i < 4; ++i)
@@ -149,14 +170,6 @@ struct SBPLPlanningParams
     nh.param("prim/joint_snap_thresh", joint_snap_thresh, joint_snap_thresh);
     nh.param("prim/xyzrpy_snap_thresh", xyzrpy_snap_thresh, xyzrpy_snap_thresh);
 
-    // Planner
-    nh.param("planner/initial_epsilon", planner_params.initial_eps, 5.0);
-    nh.param("planner/final_epsilon", planner_params.final_eps, 1.0);
-    nh.param("planner/decrement_epsilon", planner_params.dec_eps, 0.2);
-    nh.param("planner/return_first_solution", planner_params.return_first_solution, false);
-    nh.param("planner/max_time", planner_params.max_time, 60.0);
-    nh.param("planner/repair_time", planner_params.repair_time, -1.0);
-
     return true;
   }
 
@@ -173,7 +186,9 @@ struct SBPLPlanningParams
     ROS_INFO_NAMED(stream,"%40s: %s", "Use BFS", use_bfs ? "yes" : "no");
     ROS_INFO_NAMED(stream,"%40s: %s", "Attempt Shortcut", attempt_shortcut ? "yes" : "no");
     ROS_INFO_NAMED(stream,"%40s: %0.3frad", "Interpolation distance", interpolation_distance);
-    // TODO: print motion primitives
+    for (size_t i = 0; i < field_links.size(); ++i)
+      ROS_INFO_NAMED(stream,"%40s: %s", "Distance field will contain", field_links[i].c_str());
+
     ROS_INFO_NAMED(stream,"Planner parameters:");
     ROS_INFO_NAMED(stream,"%40s: %0.3fm", "Initial epsilon", planner_params.initial_eps);
     ROS_INFO_NAMED(stream,"%40s: %0.3fm", "Final epsilon", planner_params.final_eps);
@@ -182,6 +197,8 @@ struct SBPLPlanningParams
     ROS_INFO_NAMED(stream,"%40s: %0.2fs", "Maximum planning time", planner_params.max_time);
     ROS_INFO_NAMED(stream,"%40s: %0.2fs", "Maximum planning time", planner_params.repair_time);
     ROS_INFO_NAMED(stream," ");
+
+    // TODO: print motion primitives
   }
 
   void print()
