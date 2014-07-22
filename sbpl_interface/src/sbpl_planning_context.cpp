@@ -47,9 +47,8 @@ namespace sbpl_interface
 
 SBPLPlanningContext::SBPLPlanningContext(const std::string& name, const std::string& group) :
   PlanningContext(name, group),
-  ph_("~")
+  sbpl_viz_(NULL)
 {
-  pub_ = ph_.advertise<visualization_msgs::Marker>("explored", 1, true /* latched */);
 }
 
 SBPLPlanningContext::~SBPLPlanningContext()
@@ -139,10 +138,11 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   // Print stats
   ROS_INFO_STREAM("planner->replan: " << b_ret << ", planning time: " << el);
 
-  // TODO: move this upstream somehow
-  visualization_msgs::Marker marker;
-  env_chain->getExpandedCellsVisualization(marker);
-  pub_.publish(marker);
+  // Do markers
+  if (sbpl_viz_)
+  {
+    sbpl_viz_->publishExpandedStates(env_chain.get());
+  }
 
   if (!b_ret)
   {
@@ -218,6 +218,11 @@ bool SBPLPlanningContext::terminate()
 void SBPLPlanningContext::clear()
 {
   robot_model_.reset();
+}
+
+void SBPLPlanningContext::setVisualizer(SBPLVisualizerROS* viz)
+{
+  sbpl_viz_ = viz;
 }
 
 }  // namespace sbpl_interace

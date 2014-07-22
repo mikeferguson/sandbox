@@ -36,6 +36,7 @@
 #include <moveit/planning_interface/planning_interface.h>
 #include <sbpl_interface/sbpl_planning_context.h>
 #include <sbpl_interface/sbpl_planning_params.h>
+#include <sbpl_interface/sbpl_visualizer_ros.h>
 
 namespace sbpl_interface
 {
@@ -44,8 +45,15 @@ class SBPLPlannerManager : public planning_interface::PlannerManager
 {
 public:
   SBPLPlannerManager() : planning_interface::PlannerManager(),
-                         nh_("~")
+                         nh_("~"),
+                         sbpl_viz_(NULL)
   {
+  }
+
+  ~SBPLPlannerManager()
+  {
+    if (sbpl_viz_)
+      delete sbpl_viz_;
   }
 
   virtual bool initialize(const robot_model::RobotModelConstPtr& model, const std::string &ns)
@@ -71,6 +79,9 @@ public:
       return false;
     }
     sbpl_params_->print();
+
+    // Setup visualization (handles its own parameters)
+    sbpl_viz_ = new SBPLVisualizerROS(nh_);
 
     return true;
   }
@@ -122,6 +133,7 @@ public:
 
       sbpl_planning_context->setMotionPlanRequest(req);
       sbpl_planning_context->setPlanningScene(planning_scene);
+      sbpl_planning_context->setVisualizer(sbpl_viz_);
 
       if (!sbpl_planning_context->init(robot_model_, params))
       {
@@ -147,9 +159,7 @@ private:
   ros::NodeHandle nh_;
   robot_model::RobotModelConstPtr robot_model_;
   sbpl_interface::SBPLPlanningParams* sbpl_params_;
-
-  //ros::Publisher display_bfs_publisher_;
-  //std::string urdf_;
+  sbpl_interface::SBPLVisualizerROS* sbpl_viz_;
 };
 
 }  // namespace sbpl_interface

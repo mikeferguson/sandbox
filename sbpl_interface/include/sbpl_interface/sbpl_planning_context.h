@@ -38,6 +38,7 @@
 #include <moveit/robot_model/robot_model.h>
 #include <sbpl_interface/environment_chain3d_moveit.h>  // for PlanningStatistics
 #include <sbpl_interface/sbpl_planning_params.h>
+#include <sbpl_interface/sbpl_visualizer_ros.h>
 
 namespace sbpl_interface
 {
@@ -69,13 +70,14 @@ public:
   /// @sa planning_interface::PlanningContext::clear
   virtual void clear();
 
-protected:
-  ros::NodeHandle ph_;
-  // TODO move this upstream so we don't thrash re-creating contexts
-  ros::Publisher pub_;
+  /// @brief As we do not wish to spin up lots of ROS publishers in each
+  ///        context, the contexts share a visualizer.
+  void setVisualizer(SBPLVisualizerROS* viz);
 
+protected:
   robot_model::RobotModelConstPtr robot_model_;
   sbpl_interface::SBPLPlanningParams sbpl_params_;
+  sbpl_interface::SBPLVisualizerROS* sbpl_viz_;
 
   PlanningStatistics last_planning_statistics_;
 };
