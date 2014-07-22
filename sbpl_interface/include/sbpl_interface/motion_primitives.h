@@ -36,10 +36,14 @@
 #ifndef _MOVEIT_SBPL_INTERFACE_MOTION_PRIMITIVES_H_
 #define _MOVEIT_SBPL_INTERFACE_MOTION_PRIMITIVES_H_
 
+#include <vector>
+
+// These are needed for the SnapToXYZRPY
+#include <moveit/robot_state/robot_state.h>
+#include <moveit/robot_model/joint_model_group.h>
+
 namespace sbpl_interface
 {
-
-#include <vector>
 
 enum motion_primitive_types
 {
@@ -162,6 +166,47 @@ public:
 
 private:
   std::vector<double> action_;
+  double thresh_;
+};
+
+class SnapToXYZRPYMotionPrimitive : public MotionPrimitive
+{
+public:
+  SnapToXYZRPYMotionPrimitive(const geometry_msgs::Pose& pose,
+                              const geometry_msgs::Quaternion& orientation,
+                              robot_state::RobotStatePtr state,
+                              const robot_model::JointModelGroup* group,
+                              double xyz_threshold) :
+    MotionPrimitive(SNAP_TO_XYZRPY),
+    state_(*state),
+    group_(group),
+    thresh_(xyz_threshold)
+  {
+    goal_ = Eigen::Translation3d(pose.position.x, pose.position.y, pose.position.z) *
+            Eigen::Quaterniond(orientation.w, orientation.x, orientation.y, orientation.z);
+  }
+
+  virtual bool getSuccessorState(const std::vector<double>& start,
+                                 std::vector<double>* end,
+                                 double dist)
+  {
+    if (dist > thresh_)
+      return false;
+
+    state_.setJointGroupPositions(group_, start);
+    state_.update();
+
+    if (!state_.setFromIK(group_, goal_))
+      return false;
+
+    state_.copyJointGroupPositions(group_, *end);
+    return true;
+  }
+
+private:
+  robot_state::RobotState state_;
+  const robot_model::JointModelGroup* group_;
+  Eigen::Affine3d goal_;
   double thresh_;
 };
 

@@ -65,6 +65,7 @@ struct SBPLPlanningParams
     use_joint_snap(true),
     joint_snap_thresh(0.1),
     use_xyzrpy_snap(true),
+    xyzrpy_snap_thresh(0.2),
     use_rpy_snap(true)
   {
   }
@@ -100,6 +101,7 @@ struct SBPLPlanningParams
   bool use_joint_snap;
   double joint_snap_thresh;
   bool use_xyzrpy_snap;
+  double xyzrpy_snap_thresh;
   bool use_rpy_snap;
 
   bool init(ros::NodeHandle& nh)
@@ -143,6 +145,9 @@ struct SBPLPlanningParams
     nh.param("prim/use_joint_snap", use_joint_snap, use_joint_snap);
     nh.param("prim/use_xyzrpy_snap", use_xyzrpy_snap, use_xyzrpy_snap);
     nh.param("prim/use_rpy_snap", use_rpy_snap, use_rpy_snap);
+
+    nh.param("prim/joint_snap_thresh", joint_snap_thresh, joint_snap_thresh);
+    nh.param("prim/xyzrpy_snap_thresh", xyzrpy_snap_thresh, xyzrpy_snap_thresh);
 
     // Planner
     nh.param("planner/initial_epsilon", planner_params.initial_eps, 5.0);

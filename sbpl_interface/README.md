@@ -3,7 +3,7 @@
 This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
 
 ## Overall status:
- * Supports joint constraint goals -- does not yet work with position/orientation constraints
+ * Supports joint and pose constrained goals
  * Should support path constraints, but is untested
  * Pick works (although slow), place is currently not happy
  * Collision checking is slow -- planning takes about 3x longer than the groovy/sbpl_arm_planner
@@ -12,15 +12,13 @@ This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
  * Look into cost function (env3d::calculateCost)
  * Load motion primitives from parameters, with decent defaults if no parameter exists. (sbpl_planner_params.h)
  * There is no smoothness cost assigned to motion primitive transitions.
- * Lacks visualization:
-   * Need a publisher for BFS and/or distance field
- * Snap to XYZRPY, Snap to RPY are not implemented (there is snap_to_joint, which works for joint-space requests)
  * Should insert non-group links into distance field (the sbpl_arm_planner does this)
  * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
- * BUG: Goal state retains angles from first assignment -- this will be a problem when using pose constraints rather than joint constraints
  * BUG: Need to implement terminate to work with pick/place
+ * BUG: Distance field computations appear not to fill all occupied cells for a box?
  * ENHANCEMENT: use MotionPlanRequest/workspace_parameters to define BFS/distance field size, overriding sbpl_params.
  * ENHANCEMENT: use num_planning_attempts
+ * ENHANCEMENT: add snap_to_rpy (orientation solver)
 
 ## Required Components
  * PlanningData - the actual graph data structure

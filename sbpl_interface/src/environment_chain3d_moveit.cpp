@@ -183,29 +183,44 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
       MotionPrimitivePtr snap(new SnapToJointMotionPrimitive(goal_joint_values,
                                                              params_.joint_snap_thresh));
       addMotionPrimitive(snap);
-      ROS_INFO("Added snap motion prim");
+      ROS_INFO("Added joint snap motion prim");
     }
   }
   else
   {
-    ROS_WARN("Goal does not have joint constraints.");
-
     // Fill in joint data (it doesn't matter)
     goal_joint_values.resize(start_joint_values.size());
     goal_coords.resize(start_joint_values.size());
 
     // Fill in goal_xyz with the values from position constraints so that heuristic will work
-    if (mreq.goal_constraints[0].position_constraints.size() > 0)
+    if (mreq.goal_constraints[0].position_constraints.size() > 0 &&
+        mreq.goal_constraints[0].orientation_constraints.size() > 0 &&
+        mreq.goal_constraints[0].position_constraints[0].constraint_region.primitive_poses.size() > 0)
     {
-      ROS_WARN("Planner assumes that position constraint is in planning frame and that link is \
-                set to the same link as terminates the planning group.");
-      geometry_msgs::Vector3 target = mreq.goal_constraints[0].position_constraints[0].target_point_offset;
-      continuousXYZtoDiscreteXYZ(target.x, target.y, target.z, goal_xyz[0], goal_xyz[1], goal_xyz[2]);
+      //ROS_WARN("Planner assumes that pose is in model frame and that link is set to end effector link.");
+      geometry_msgs::Pose pose = mreq.goal_constraints[0].position_constraints[0].constraint_region.primitive_poses[0];
+      continuousXYZtoDiscreteXYZ(pose.position.x, pose.position.y, pose.position.z, goal_xyz[0], goal_xyz[1], goal_xyz[2]);
     }
     else
     {
       ROS_ERROR("No joint or position constraints -- cannot plan!");
       return false;
+    }
+
+    dbg_ss.str("");
+    for (size_t i=0; i<3; ++i)
+      dbg_ss << goal_xyz[i] << " ";
+    ROS_INFO_STREAM("[Goal] " << dbg_ss.str());
+
+    // Add snap to xyzrpy primitive
+    if (params_.use_xyzrpy_snap)
+    {
+      MotionPrimitivePtr snap(new SnapToXYZRPYMotionPrimitive(mreq.goal_constraints[0].position_constraints[0].constraint_region.primitive_poses[0],
+                                                              mreq.goal_constraints[0].orientation_constraints[0].orientation,
+                                                              state_, joint_model_group_,
+                                                              params_.xyzrpy_snap_thresh));
+      addMotionPrimitive(snap);
+      ROS_INFO("Added xyzrpy snap motion prim");
     }
   }
 

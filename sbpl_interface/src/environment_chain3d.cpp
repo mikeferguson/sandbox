@@ -154,20 +154,13 @@ void EnvironmentChain3D::GetSuccs(int source_state_ID,
     // Get coord
     convertJointAnglesToCoord(succ_joint_angles, succ_coord);
 
-/*ROS_INFO("Evaluating: %d %d %d %d %d %d %d, with heuristic %d", hash_entry->coord[0],
-                                                                hash_entry->coord[1],
-                                                                hash_entry->coord[2],
-                                                                hash_entry->coord[3],
-                                                                hash_entry->coord[4],
-                                                                hash_entry->coord[5],
-                                                                hash_entry->coord[6],
-                                                                getEndEffectorHeuristic(source_state_ID, goal_->stateID));
-*/
-
     EnvChain3dHashEntry* succ_hash_entry = NULL;
     if (isStateGoal(succ_joint_angles))
     {
       succ_hash_entry = goal_;
+      // fill in results
+      succ_hash_entry->coord = succ_coord;
+      succ_hash_entry->angles = succ_joint_angles;
     }
     else
     {
