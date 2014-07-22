@@ -244,7 +244,7 @@ int EnvironmentChain3D::getEndEffectorHeuristic(int FromStateID, int ToStateID)
   return getEndEffectorHeuristic(from->xyz[0], from->xyz[1], from->xyz[2]);
 }
 
-int EnvironmentChain3D::getEndEffectorHeuristic(int x, int y, int z)
+int EnvironmentChain3D::getEndEffectorHeuristic(int x, int y, int z) const
 {
   ROS_ERROR("EnvironmentChain3D has no getEndEffectorHeuristic(x,y,z) defined.");
   throw new SBPL_Exception();

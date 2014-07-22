@@ -324,7 +324,7 @@ protected:
 
   /** @brief The heuristic */
   virtual int getEndEffectorHeuristic(int FromStateID, int ToStateID);
-  virtual int getEndEffectorHeuristic(int x, int y, int z);
+  virtual int getEndEffectorHeuristic(int x, int y, int z) const;
 
   void convertJointAnglesToCoord(const std::vector<double> &angle, std::vector<int> &coord);
   void convertCoordToJointAngles(const std::vector<int> &coord, std::vector<double> &angles);

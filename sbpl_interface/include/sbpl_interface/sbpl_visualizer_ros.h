@@ -49,32 +49,24 @@ public:
 
   SBPLVisualizerROS(ros::NodeHandle& nh)
   {
-    bool publish;
-
-    // TODO: goal states
-    // TODO: distance field
-    // TODO: heuristic
-
-    nh.param("visual/expanded_states", publish, false);
-    if (publish)
-    {
-      ROS_INFO("Create pub");
-      expanded_states_pub_ = nh.advertise<visualization_msgs::Marker>("expanded_states", 1, true /* latched */);
-    }
-
-    // TODO: trajectory
-
+    nh.param("visual/goal", publish_goal_, false);
+    nh.param("visual/field", publish_field_, false);
+    nh.param("visual/heuristic", publish_heuristic_, false);
+    nh.param("visual/expanded_states", publish_expanded_states_, false);
+    nh.param("visual/trajectory", publish_trajectory_, false);
     nh.param("visual/max_trajectory_points", max_trajectory_points_, 25);
+
+    publisher_ = nh.advertise<visualization_msgs::MarkerArray>("visualization", 10);
   }
 
   /** @brief Publish the cells, in cartesian space, that were expanded */
   bool publishExpandedStates(EnvironmentChain3DMoveIt* env)
   {
-    if (expanded_states_pub_)
+    if (publish_expanded_states_)
     {
-      visualization_msgs::Marker marker;
-      env->getExpandedCellsVisualization(marker);
-      expanded_states_pub_.publish(marker);
+      visualization_msgs::MarkerArray markers;
+      env->getExpandedStatesVisualization(markers);
+      publisher_.publish(markers);
       return true;
     }
     return false;  // did not publish
@@ -82,11 +74,13 @@ public:
 
 
 private:
-  ros::Publisher goal_pub_;
-  ros::Publisher distance_field_pub_;
-  ros::Publisher hueristic_pub_;
-  ros::Publisher expanded_states_pub_;
-  ros::Publisher trajectory_pub_;
+  ros::Publisher publisher_;
+
+  bool publish_goal_;
+  bool publish_field_;
+  bool publish_heuristic_;
+  bool publish_expanded_states_;
+  bool publish_trajectory_;
 
   int max_trajectory_points_;  /// maximum number of points in published trajectory
 };

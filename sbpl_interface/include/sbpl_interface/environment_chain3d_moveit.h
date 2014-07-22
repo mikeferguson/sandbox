@@ -69,7 +69,7 @@ public:
                        trajectory_msgs::JointTrajectory& traj_out);
 
   /** @brief Get a visualization of the expanded state space */
-  void getExpandedCellsVisualization(visualization_msgs::Marker& marker) const;
+  void getExpandedStatesVisualization(visualization_msgs::MarkerArray& markers) const;
 
 protected:
   /** @brief Do collision checking, check path & joint limit constraints. */
@@ -85,7 +85,7 @@ protected:
                                           int& x, int& y, int& z);
 
   /** @brief The heuristic based on BFS. */
-  virtual int getEndEffectorHeuristic(int x, int y, int z);
+  virtual int getEndEffectorHeuristic(int x, int y, int z) const;
 
   /** @brief Collision check one robot state. */
   bool isCollisionFree(robot_state::RobotStatePtr rs);

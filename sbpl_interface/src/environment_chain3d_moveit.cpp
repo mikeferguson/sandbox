@@ -343,7 +343,7 @@ bool EnvironmentChain3DMoveIt::continuousXYZtoDiscreteXYZ(
   return true;
 }
 
-int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int x, int y, int z)
+int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int x, int y, int z) const
 {
   boost::this_thread::interruption_point();
   if (params_.use_bfs)
@@ -527,25 +527,12 @@ void EnvironmentChain3DMoveIt::attemptShortcut(const trajectory_msgs::JointTraje
 }
 
 
-void EnvironmentChain3DMoveIt::getExpandedCellsVisualization(visualization_msgs::Marker& marker) const
+void EnvironmentChain3DMoveIt::getExpandedStatesVisualization(visualization_msgs::MarkerArray& markers) const
 {
-  marker.points.clear();
-  marker.header.frame_id = state_->getRobotModel()->getModelFrame();
-  marker.header.stamp = ros::Time::now();
-  marker.ns = "expanded_states";
-  marker.id = 1;
-  marker.type = visualization_msgs::Marker::CUBE_LIST;
-  marker.action = visualization_msgs::Marker::MODIFY;
-  marker.scale.x = params_.field_resolution;
-  marker.scale.y = params_.field_resolution;
-  marker.scale.z = params_.field_resolution;
-  marker.color.r = 0.0;
-  marker.color.g = 1.0;
-  marker.color.b = 0.0;
-  marker.color.a = 1.0;
-
   int xy = static_cast<int>(params_.field_x/params_.field_resolution * params_.field_y/params_.field_resolution);
   int dx = static_cast<int>(params_.field_x/params_.field_resolution);
+
+  int max_cost = 0;
 
   // compute which cells are expanded
   std::vector<int> expanded(xy * (params_.field_z/params_.field_resolution), 0);
@@ -557,11 +544,24 @@ void EnvironmentChain3DMoveIt::getExpandedCellsVisualization(visualization_msgs:
       int idx = entry->xyz[2] * xy;
       idx += entry->xyz[1] * dx;
       idx += entry->xyz[0];
-      expanded[idx] += 1;
+      expanded[idx] = getEndEffectorHeuristic(entry->xyz[0], entry->xyz[1], entry->xyz[2]);
+      if (expanded[idx] > max_cost)
+        max_cost = expanded[idx];
     }
   }
 
-  int cells = 0;
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = state_->getRobotModel()->getModelFrame();
+  marker.header.stamp = ros::Time::now();
+  marker.ns = "expanded_states";
+  marker.type = visualization_msgs::Marker::CUBE;
+  marker.action =  visualization_msgs::Marker::ADD;
+  marker.scale.x = params_.field_resolution;
+  marker.scale.y = params_.field_resolution;
+  marker.scale.z = params_.field_resolution;
+  marker.lifetime = ros::Duration(0);
+
+  int states = 0;
   for (int x = 0; x < static_cast<int>(params_.field_x/params_.field_resolution); ++x)
     for (int y = 0; y < static_cast<int>(params_.field_y/params_.field_resolution); ++y)
       for (int z = 0; z < static_cast<int>(params_.field_z/params_.field_resolution); ++z)
@@ -569,17 +569,21 @@ void EnvironmentChain3DMoveIt::getExpandedCellsVisualization(visualization_msgs:
         int idx = z * xy + y * dx + x;
         if (expanded[idx] > 0)
         {
-          int last = marker.points.size();
-          marker.points.resize(last + 1);
-          marker.points[last].x = (x * params_.field_resolution) + params_.field_origin_x;
-          marker.points[last].y = (y * params_.field_resolution) + params_.field_origin_y;
-          marker.points[last].z = (z * params_.field_resolution) + params_.field_origin_z;
-          ++cells;
+          int last = markers.markers.size();
+          markers.markers.push_back(marker);
+          markers.markers[last].id = states;
+          markers.markers[last].color.r = (expanded[idx]/static_cast<double>(max_cost));
+          markers.markers[last].color.g = ((max_cost-expanded[idx])/static_cast<double>(max_cost));
+          markers.markers[last].color.b = 0.0;
+          markers.markers[last].color.a = 1.0;
+          markers.markers[last].pose.position.x = (x * params_.field_resolution) + params_.field_origin_x;
+          markers.markers[last].pose.position.y = (y * params_.field_resolution) + params_.field_origin_y;
+          markers.markers[last].pose.position.z = (z * params_.field_resolution) + params_.field_origin_z;
+          ++states;
         }
       }
 
-  ROS_INFO("Visualizing %d expanded cells.", cells);
+  ROS_INFO("Visualizing %d expanded states.", states);
 }
-
 
 }  // namespace sbpl_interface
