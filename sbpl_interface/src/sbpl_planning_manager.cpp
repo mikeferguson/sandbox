@@ -88,10 +88,10 @@ public:
   virtual void getPlanningAlgorithms(std::vector<std::string> &algs) const
   {
     algs.clear();
-    algs.push_back("AnytimeD*");
-    algs.push_back("ANA*");
     algs.push_back("ARA*");
-    algs.push_back("R*");
+    algs.push_back("AnytimeD*");
+    //algs.push_back("ANA*");  TODO: these aren't working, see context for more
+    //algs.push_back("R*");
   }
 
   virtual void setPlannerConfigurations(const planning_interface::PlannerConfigurationMap &pconfig)

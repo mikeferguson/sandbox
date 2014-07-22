@@ -101,7 +101,32 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   boost::this_thread::interruption_point();
 
   // Create planner
-  boost::shared_ptr<SBPLPlanner> planner(new ARAPlanner(env_chain.get(), true));
+  boost::shared_ptr<SBPLPlanner> planner;
+  if (req.planner_id.empty() || req.planner_id == "ARA*")
+  {
+    planner.reset(new ARAPlanner(env_chain.get(), true));
+  }
+  else if (req.planner_id == "AnytimeD*")
+  {
+    planner.reset(new ADPlanner(env_chain.get(), true));
+  }
+  /* These don't seem to work
+  else if (req.planner_id == "ANA*")
+  {
+    planner.reset(new anaPlanner(env_chain.get(), true));
+  }
+  else if (req.planner_id == "R*")
+  {
+    planner.reset(new RSTARPlanner(env_chain.get(), true));
+  }*/
+  else
+  {
+    // Default is ARA*
+    ROS_WARN("Unrecognized planner %s, using ARA*", req.planner_id.c_str());
+    planner.reset(new ARAPlanner(env_chain.get(), true));
+  }
+
+  // Setup planner
   planner->force_planning_from_scratch();
   planner->set_start(env_chain->getStartID());
   planner->set_goal(env_chain->getGoalID());
