@@ -183,8 +183,8 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   last_planning_statistics_.print();
 
   // Convert  moveit_msgs::MotionPlan::Response to planning_interface::MotionPlanResponse
+  robot_state::RobotState start_state(scene->getCurrentState());
   res.trajectory_.reset(new robot_trajectory::RobotTrajectory(robot_model_, req.group_name));
-  robot_state::RobotState start_state(robot_model_);
   res.trajectory_->setRobotTrajectoryMsg(start_state, mres.trajectory);
   res.error_code_.val = moveit_msgs::MoveItErrorCodes::SUCCESS;
   res.planning_time_ = ros::WallDuration(el).toSec();
