@@ -51,7 +51,6 @@ public:
   {
     nh.param("visual/goal", publish_goal_, false);
     nh.param("visual/field", publish_field_, false);
-    nh.param("visual/heuristic", publish_heuristic_, false);
     nh.param("visual/expanded_states", publish_expanded_states_, false);
     nh.param("visual/trajectory", publish_trajectory_, false);
     nh.param("visual/max_trajectory_points", max_trajectory_points_, 25);
@@ -62,23 +61,85 @@ public:
   /** @brief Publish the cells, in cartesian space, that were expanded */
   bool publishExpandedStates(EnvironmentChain3DMoveIt* env)
   {
-    if (publish_expanded_states_)
+    if (!publish_expanded_states_)
+      return false;  // did not publish
+
+    if (!env)
+      return false;
+
+    std::vector< std::vector<double> > states;
+    env->getExpandedStates(states);
+
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = env->getPlanningFrame();
+    marker.header.stamp = ros::Time::now();
+    marker.ns = "expanded_states";
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.action =  visualization_msgs::Marker::ADD;
+    marker.scale.x = env->getParams().field_resolution;
+    marker.scale.y = env->getParams().field_resolution;
+    marker.scale.z = env->getParams().field_resolution;
+    marker.lifetime = ros::Duration(0);
+
+    double max_cost = 0;
+    for (size_t i = 0; i < states.size(); ++i)
     {
-      visualization_msgs::MarkerArray markers;
-      env->getExpandedStatesVisualization(markers);
-      publisher_.publish(markers);
-      return true;
+      if (states[i][3] > max_cost)
+        max_cost = states[i][3];
     }
-    return false;  // did not publish
+
+    visualization_msgs::MarkerArray array;
+    array.markers.resize(states.size());
+    for (size_t i = 0; i < states.size(); ++i)
+    {
+      array.markers[i] = marker;
+      array.markers[i].id = i;
+      array.markers[i].color.r = states[i][3]/max_cost;
+      array.markers[i].color.g = (max_cost-states[i][3])/max_cost;
+      array.markers[i].color.b = 0.0;
+      array.markers[i].color.a = 1.0;
+      array.markers[i].pose.position.x = states[i][0];
+      array.markers[i].pose.position.y = states[i][1];
+      array.markers[i].pose.position.z = states[i][2];
+    }
+
+     ROS_INFO("Visualizing %d expanded states.", static_cast<int>(states.size()));
+     publisher_.publish(array);
+     return true;
   }
 
+  /** @brief Publish the BFS */
+  bool publishDistanceField(EnvironmentChain3DMoveIt* env)
+  {
+    if (!publish_field_)
+      return false;  // did not publish
+
+    if (!env)
+      return false;
+
+    distance_field::DistanceField* field = env->getDistanceField();
+
+    visualization_msgs::MarkerArray array;
+    array.markers.resize(1);
+    field->getIsoSurfaceMarkers(0,  // min dist
+                                0,  // max dist
+                                env->getPlanningFrame(),
+                                ros::Time::now(),
+                                array.markers[0]);
+    array.markers[0].color.r = 1.0;
+    array.markers[0].color.g = 0.0;
+    array.markers[0].color.b = 0.0;
+    array.markers[0].color.a = 0.7;
+
+    publisher_.publish(array);
+    return true;
+  }
 
 private:
   ros::Publisher publisher_;
 
   bool publish_goal_;
   bool publish_field_;
-  bool publish_heuristic_;
   bool publish_expanded_states_;
   bool publish_trajectory_;
 

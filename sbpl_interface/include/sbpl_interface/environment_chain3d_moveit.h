@@ -44,7 +44,6 @@
 #include <moveit/robot_model/joint_model_group.h>
 #include <moveit_msgs/MotionPlanRequest.h>
 #include <moveit_msgs/MotionPlanResponse.h>
-#include <visualization_msgs/Marker.h>
 
 namespace sbpl_interface
 {
@@ -68,8 +67,13 @@ public:
   void attemptShortcut(const trajectory_msgs::JointTrajectory& traj_in,
                        trajectory_msgs::JointTrajectory& traj_out);
 
-  /** @brief Get a visualization of the expanded state space */
-  void getExpandedStatesVisualization(visualization_msgs::MarkerArray& markers) const;
+  /** @brief Get a vector of <x,y,z,cost> for each expanded state */
+  void getExpandedStates(std::vector< std::vector<double> >& states) const;
+
+  /** @brief Get the distance field used for computation */
+  distance_field::DistanceField* getDistanceField();
+
+  std::string getPlanningFrame() { return state_->getRobotModel()->getModelFrame(); }
 
 protected:
   /** @brief Do collision checking, check path & joint limit constraints. */

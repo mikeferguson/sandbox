@@ -142,6 +142,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   if (sbpl_viz_)
   {
     sbpl_viz_->publishExpandedStates(env_chain.get());
+    sbpl_viz_->publishDistanceField(env_chain.get());
   }
 
   if (!b_ret)
