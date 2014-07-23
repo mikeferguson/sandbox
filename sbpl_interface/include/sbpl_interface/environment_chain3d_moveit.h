@@ -83,6 +83,9 @@ protected:
   /** @brief Check goal constraints. */
   virtual bool isStateGoal(const std::vector<double>& angles);
 
+  /** @brief Calculate the cost for moving from one state to another -- this is used in GetSuccs. */
+  virtual int calculateCost(EnvChain3dHashEntry* HashEntry1, EnvChain3dHashEntry* HashEntry2);
+
   /** @brief Get the discrete XYZ of the end effector based on joint angles. */
   virtual bool getEndEffectorCoord(const std::vector<double>& angles, int * xyz);
   virtual bool continuousXYZtoDiscreteXYZ(const double X, const double Y, const double Z,

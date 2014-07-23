@@ -54,7 +54,8 @@ EnvironmentChain3DMoveIt::EnvironmentChain3DMoveIt() :
   EnvironmentChain3D(),
   goal_constraint_set_(NULL),
   path_constraint_set_(NULL),
-  bfs_(NULL)
+  bfs_(NULL),
+  field_(NULL)
 {
 }
 
@@ -62,6 +63,8 @@ EnvironmentChain3DMoveIt::~EnvironmentChain3DMoveIt()
 {
   if (bfs_ != NULL)
     delete bfs_;
+  if (field_ != NULL)
+    delete field_;
 }
 
 bool EnvironmentChain3DMoveIt::setupForMotionPlan(
@@ -365,6 +368,32 @@ bool EnvironmentChain3DMoveIt::continuousXYZtoDiscreteXYZ(
   z = (Z - params_.field_origin_z) / params_.field_resolution;
   // TODO: should we check limits of the field?
   return true;
+}
+
+int EnvironmentChain3DMoveIt::calculateCost(EnvChain3dHashEntry* from, EnvChain3dHashEntry* to)
+{
+  // Distance to obstacle in state s'
+  double dist_to_obs = field_->getDistance(to->xyz[0], to->xyz[1], to->xyz[2]);
+
+  // cost_cell(s')
+  int cost_cell = 1;
+  if (dist_to_obs < params_.max_obstacle_dist)
+    cost_cell = static_cast<int>((params_.max_obstacle_dist - dist_to_obs) * params_.cost_obstacle_dist);
+
+  // cost_action(s,s')
+  int cost_action = getEndEffectorHeuristic(from->xyz[0], from->xyz[1], from->xyz[2]) -
+                    getEndEffectorHeuristic(to->xyz[0], to->xyz[1], to->xyz[2]);
+  if (cost_action < 0)
+    cost_action = 1;
+
+  // cost_smooth(s,s')
+  int cost_smooth = 1;
+  if (from->action == to->action)
+    cost_smooth = 0;
+
+  return params_.w_cell * cost_cell +
+         params_.w_action * cost_action +
+         params_.w_smooth * cost_smooth;
 }
 
 int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int x, int y, int z) const

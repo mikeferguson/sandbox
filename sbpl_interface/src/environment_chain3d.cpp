@@ -226,7 +226,7 @@ bool EnvironmentChain3D::getEndEffectorCoord(const std::vector<double>& angles, 
 
 int EnvironmentChain3D::calculateCost(EnvChain3dHashEntry* HashEntry1, EnvChain3dHashEntry* HashEntry2)
 {
-  // TODO: apparently this is what both sbpl_manipulation and the former arm_nav/moveit interfaces do...
+  // EnvironmentChain3DMoveIt contains the real version
   return 1;
 }
 

@@ -5,22 +5,23 @@ This creates a (hopefully) cleaner interface to SBPL for n-DOF arm planning.
 ## Overall status:
  * Supports joint and pose constrained goals
  * Should support path constraints, but is untested
+ * Lots of parameters, described in sbpl_planning_params.h. See also
+   [ubr1](https://github.com/mikeferguson/ubr1_preview/blob/sbpl/ubr1_moveit/config/sbpl_planning.yaml)
+   config for examples.
  * Pick works (although slow), place is currently not happy
  * Collision checking is slow -- planning takes about 3x longer than the groovy/sbpl_arm_planner
 
 ## TODO (in order of expected/anticipated severeness)
- * Look into cost function (env3d::calculateCost)
- * There is no smoothness cost assigned to motion primitive transitions.
  * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
  * BUG: Need to implement terminate to work with pick/place
  * BUG: Distance field computations appear not to fill all occupied cells for a box?
  * ENHANCEMENT: use MotionPlanRequest/workspace_parameters to define BFS/distance field size, overriding sbpl_params.
  * ENHANCEMENT: add snap_to_rpy (orientation solver from sbpl_arm_planner)
 
-## Required Components
- * PlanningData - the actual graph data structure
+## Components
+ * Env3dHashData - the actual graph data structure
  * BFS - the heuristic data structure
- * Environment (plus statistics and parameters)
+ * EnvironmentChain3d (plus statistics and parameters)
    * Needs access to planning_scene, robot_state
    * Create distance field from robot state for evaluating cell cost - C_cell(s')
    * Run BFS for H_xyz(s). 2010 paper talks about 100^3 grid for BFS taking 0.4s to compute.
@@ -35,7 +36,11 @@ This creates a (hopefully) cleaner interface to SBPL for n-DOF arm planning.
    * Snap to RPY (orientation solver)
      * This doesn't appear to be used at first look in sbpl_motion_planning, however,
        it's baked into the computeIK call.
-   * Loader utilities to create primitives from file
+   * Motion Primitives are mostly accessed through the loader utilities to create
+     primitives from file
+     * While not particularly clean, the complex primitives (the IK solver and snap
+       to joint) are currently created in EnvironmentChain3DMoveIt::setupForMotionPlan,
+       because the state data is available there to create them.
 
 ## Other Notes
 

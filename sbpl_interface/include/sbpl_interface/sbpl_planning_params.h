@@ -49,6 +49,11 @@ struct SBPLPlanningParams
   SBPLPlanningParams() :
     cost_per_cell(1),
     cost_per_meter(50),
+    cost_obstacle_dist(50),
+    max_obstacle_dist(0.2),
+    w_cell(1),
+    w_action(0),
+    w_smooth(0),
     use_bfs(true),
     angle_discretization(angles::from_degrees(1)),
     attempt_shortcut(true),
@@ -65,9 +70,26 @@ struct SBPLPlanningParams
   {
   }
 
-  // Scoring
+  /// When using BFS heuristic:
+  ///  heuristic(s,s') = bfs_cost(s') * cost_per_cell
   int cost_per_cell;
+
+  /// When using euclidean heuristic:
+  ///  heuristic(s,s') = end_effector_travel(s,s') * cost_per_meter
   int cost_per_meter;
+
+  /// When using bfs, distance field contributes to cell cost
+  ///  cost(s,s') = w_cell * c_cell(s') + w_action * c_action(s,s') + w_smooth * c_smooth(s,s')
+  /// Where:
+  ///  c_cell(s') = 0 IF distance_field(s') < max_obstacle_dist, OTHERWISE:
+  ///             = (max_obstacle_dist - distance_field(s')) * cost_obstacle_dist
+  ///  c_action(s,s') comes from motion primitive
+  ///  c_smooth(s,s') = 0 if same motion primitive, 1 otherwise
+  int cost_obstacle_dist;
+  double max_obstacle_dist;
+  int w_cell;
+  int w_action;
+  int w_smooth;
 
   // Environment
   bool use_bfs;  /// should we use BFS or Euclidean distance heuristic?
@@ -96,6 +118,15 @@ struct SBPLPlanningParams
              defines the proper namespace to use for params */
   bool init(ros::NodeHandle& nh)
   {
+    // Costs
+    nh.param("cost_per_cell", cost_per_cell, cost_per_cell);
+    nh.param("cost_per_meter", cost_per_meter, cost_per_meter);
+    nh.param("cost_obstacle_dist", cost_obstacle_dist, cost_obstacle_dist);
+    nh.param("max_obstacle_dist", max_obstacle_dist, max_obstacle_dist);
+    nh.param("w_cell", w_cell, w_cell);
+    nh.param("w_action", w_action, w_action);
+    nh.param("w_smooth", w_smooth, w_smooth);
+
     // Env
     nh.param("env/use_bfs_heuristic", use_bfs, use_bfs);
     nh.param("env/angle_discretization", angle_discretization, angle_discretization);
