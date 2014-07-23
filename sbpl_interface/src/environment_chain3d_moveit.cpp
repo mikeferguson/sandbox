@@ -316,6 +316,10 @@ bool EnvironmentChain3DMoveIt::isStateToStateValid(const std::vector<double>& st
   state_->setJointGroupPositions(joint_model_group_, end);
   state_->update();
 
+  // Ensure joint limits are not exceeded
+  if (!state_->satisfiesBounds(joint_model_group_))
+    return false;
+
   // Ensure path constraints
   kinematic_constraints::ConstraintEvaluationResult con_res = path_constraint_set_->decide(*state_);
   if (!con_res.satisfied)
