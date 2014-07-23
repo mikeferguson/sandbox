@@ -71,7 +71,6 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
    SBPLPlanningParams& params)
 {
   ros::WallTime setup_start = ros::WallTime::now();
-  ROS_INFO("Setting up for SBPL motion planning!");
 
   // Setup data structs
   planning_scene_ = planning_scene;
@@ -92,7 +91,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   dbg_ss.str("");
   for (size_t i=0; i < start_joint_values.size(); ++i)
     dbg_ss << start_joint_values[i] << " ";
-  ROS_INFO_STREAM("[Start angles] " << dbg_ss.str());
+  ROS_DEBUG_STREAM_NAMED("sbpl", "[Start angles] " << dbg_ss.str());
 
   // Check start state for collision
   collision_detection::CollisionRequest creq;
@@ -101,7 +100,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   planning_scene->checkCollision(creq, cres, *state_, planning_scene_->getAllowedCollisionMatrix());
   if (cres.collision)
   {
-    ROS_ERROR_STREAM("Start state is in collision. Can't plan");
+    ROS_ERROR_STREAM_NAMED("sbpl", "Start state is in collision. Can't plan");
     mres.error_code.val = moveit_msgs::MoveItErrorCodes::START_STATE_IN_COLLISION;
     return false;
   }
@@ -112,12 +111,12 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   dbg_ss.str("");
   for (size_t i=0; i<start_coords.size(); ++i)
     dbg_ss << start_coords[i] << " ";
-  ROS_INFO_STREAM("[Start coords] " << dbg_ss.str());
+  ROS_DEBUG_STREAM_NAMED("sbpl", "[Start coords] " << dbg_ss.str());
 
   int start_xyz[3];
   if (!getEndEffectorCoord(start_joint_values, start_xyz))
   {
-    ROS_ERROR("Bad start pose");
+    ROS_ERROR_NAMED("sbpl", "Bad start pose");
     mres.error_code.val = moveit_msgs::MoveItErrorCodes::INVALID_ROBOT_STATE;
     return false;
   }
@@ -145,7 +144,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     planning_scene->checkCollision(creq, cres, *state_, planning_scene_->getAllowedCollisionMatrix());
     if (cres.collision)
     {
-      ROS_ERROR_STREAM("Goal state is in collision.  Can't plan");
+      ROS_ERROR_STREAM_NAMED("sbpl", "Goal state is in collision.  Can't plan");
       mres.error_code.val = moveit_msgs::MoveItErrorCodes::GOAL_IN_COLLISION;
       return false;
     }
@@ -157,7 +156,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     convertJointAnglesToCoord(goal_joint_values, goal_coords);
     if (!getEndEffectorCoord(goal_joint_values, goal_xyz))
     {
-      ROS_ERROR("Bad goal pose");
+      ROS_ERROR_NAMED("sbpl", "Bad goal pose");
       mres.error_code.val = moveit_msgs::MoveItErrorCodes::INVALID_GOAL_CONSTRAINTS;
       return false;
     }
@@ -166,11 +165,11 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     dbg_ss.str("");
     for (size_t i=0; i<goal_joint_values.size(); ++i)
       dbg_ss << goal_joint_values[i] << " ";
-    ROS_INFO_STREAM("[Goal angles] " << dbg_ss.str());
+    ROS_DEBUG_STREAM_NAMED("sbpl", "[Goal angles] " << dbg_ss.str());
     dbg_ss.str("");
     for (size_t i=0; i<goal_coords.size(); ++i)
       dbg_ss << goal_coords[i] << " ";
-    ROS_INFO_STREAM("[Goal coords] " << dbg_ss.str());
+    ROS_DEBUG_STREAM_NAMED("sbpl", "[Goal coords] " << dbg_ss.str());
 
     // Planning in joint space -- should add a snap to joints primitive
     if (params_.primitives.use_joint_snap)
@@ -178,7 +177,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
       MotionPrimitivePtr snap(new SnapToJointMotionPrimitive(goal_joint_values,
                                                              params_.primitives.joint_snap_thresh));
       addMotionPrimitive(snap);
-      ROS_INFO("Added joint snap motion prim");
+      ROS_DEBUG_NAMED("sbpl", "Added joint snap motion prim");
     }
   }
   else
@@ -198,14 +197,14 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     }
     else
     {
-      ROS_ERROR("No joint or position constraints -- cannot plan!");
+      ROS_ERROR_NAMED("sbpl", "No joint or position constraints -- cannot plan!");
       return false;
     }
 
     dbg_ss.str("");
     for (size_t i=0; i<3; ++i)
       dbg_ss << goal_xyz[i] << " ";
-    ROS_INFO_STREAM("[Goal] " << dbg_ss.str());
+    ROS_DEBUG_STREAM_NAMED("sbpl", "[Goal] " << dbg_ss.str());
 
     // Add snap to xyzrpy primitive
     if (params_.primitives.use_xyzrpy_snap)
@@ -215,7 +214,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
                                                               state_, joint_model_group_,
                                                               params_.primitives.xyzrpy_snap_thresh));
       addMotionPrimitive(snap);
-      ROS_INFO("Added xyzrpy snap motion prim");
+      ROS_DEBUG_NAMED("sbpl", "Added xyzrpy snap motion prim");
     }
   }
 
@@ -225,7 +224,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
 
   if (params_.use_bfs)
   {
-    ROS_INFO("Setting up to use BFS.");
+    ROS_DEBUG_NAMED("sbpl", "Setting up to use BFS.");
 
     // Create distance field
     ros::WallTime distance_start = ros::WallTime::now();
@@ -288,7 +287,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   path_constraint_set_->add(mreq.path_constraints, planning_scene_->getTransforms());
 
   planning_statistics_.total_setup_time_ = ros::WallTime::now() - setup_start;
-  ROS_INFO("Setup for SBPL motion planning is complete!");
+  ROS_DEBUG_NAMED("sbpl", "Setup for SBPL motion planning is complete!");
   return true;
 }
 
@@ -392,7 +391,7 @@ int getJointDistanceIntegerMax(const std::vector<double>& angles1,
 {
   if (angles1.size() != angles2.size())
   {
-    ROS_ERROR("getJointDistanceIntegerMax: Angles aren't the same size!");
+    ROS_ERROR_NAMED("sbpl", "getJointDistanceIntegerMax: Angles aren't the same size!");
     return INT_MAX;
   }
 

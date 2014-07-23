@@ -120,7 +120,9 @@ struct Env3dHashData
     memset(entry, -1, NUMOFINDICES_STATEID2IND*sizeof(int));
     state_ID_to_index_mapping_.push_back(entry);
     if (new_hash_entry->stateID != (int)state_ID_to_index_mapping_.size()-1)
-      ROS_ERROR_STREAM("Size mismatch between state mappings " << new_hash_entry->stateID << " " << state_ID_to_index_mapping_.size());
+      ROS_ERROR_STREAM_NAMED("sbpl", "Size mismatch between state mappings " <<
+                                     new_hash_entry->stateID << " " <<
+                                     state_ID_to_index_mapping_.size());
 
     return new_hash_entry;
   }
@@ -177,18 +179,18 @@ struct PlanningStatistics
 
   void print()
   {
-    ROS_INFO_STREAM("Distance Field Setup Time: " << distance_field_setup_time_.toSec() << ". " <<
-                    "Occupied: " << distance_field_percent_occupied_ << "%");
-    ROS_INFO_STREAM("Heuristic Setup Time: " << heuristic_setup_time_.toSec());
-    ROS_INFO_STREAM("Heuristic Run Time: " << heuristic_run_time_.toSec());
-    ROS_INFO_STREAM("Expansions: " << total_expansions_ << ". " <<
-                    "Average Time: " << total_expansion_time_.toSec()/static_cast<double>(total_expansions_) << "s " <<
-                    "Freq: " << 1.0/(total_expansion_time_.toSec()/static_cast<double>(total_expansions_)) << "hz");
-    ROS_INFO_STREAM("Total collision checks " << coll_checks_ << ". " <<
-                    "Freq: " << 1.0/(total_coll_check_time_.toSec()/static_cast<double>(coll_checks_)) << "hz");
-    ROS_INFO_STREAM("Total Planning Time: " << total_planning_time_.toSec());
-    ROS_INFO_STREAM("Total Shortcut Time: " << shortcutting_time_.toSec());
-    ROS_INFO_STREAM("Total Time: " << total_time_.toSec());
+    ROS_DEBUG_STREAM_NAMED("sbpl", "Distance Field Setup Time: " << distance_field_setup_time_.toSec() << ". " <<
+                           "Occupied: " << distance_field_percent_occupied_ << "%");
+    ROS_DEBUG_STREAM_NAMED("sbpl", "Heuristic Setup Time: " << heuristic_setup_time_.toSec());
+    ROS_DEBUG_STREAM_NAMED("sbpl", "Heuristic Run Time: " << heuristic_run_time_.toSec());
+    ROS_DEBUG_STREAM_NAMED("sbpl", "Expansions: " << total_expansions_ << ". " <<
+                           "Average Time: " << total_expansion_time_.toSec()/static_cast<double>(total_expansions_) << "s " <<
+                           "Freq: " << 1.0/(total_expansion_time_.toSec()/static_cast<double>(total_expansions_)) << "hz");
+    ROS_DEBUG_STREAM_NAMED("sbpl", "Total collision checks " << coll_checks_ << ". " <<
+                           "Freq: " << 1.0/(total_coll_check_time_.toSec()/static_cast<double>(coll_checks_)) << "hz");
+    ROS_DEBUG_STREAM_NAMED("sbpl", "Total Planning Time: " << total_planning_time_.toSec());
+    ROS_DEBUG_STREAM_NAMED("sbpl", "Total Shortcut Time: " << shortcutting_time_.toSec());
+    ROS_DEBUG_STREAM_NAMED("sbpl", "Total Time: " << total_time_.toSec());
   }
 };
 

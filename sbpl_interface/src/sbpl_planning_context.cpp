@@ -60,7 +60,7 @@ bool SBPLPlanningContext::init(const robot_model::RobotModelConstPtr& model,
 {
   if (!model)
   {
-    ROS_ERROR("No Robot Model given to the SBPLPlanningContext!");
+    ROS_ERROR_NAMED("sbpl", "No Robot Model given to the SBPLPlanningContext!");
     return false;
   }
 
@@ -99,7 +99,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
                                      mres,
                                      sbpl_params_))
   {
-    ROS_ERROR("Unable to setup environment chain.");
+    ROS_ERROR_NAMED("sbpl", "Unable to setup environment chain.");
     return false;
   }
   boost::this_thread::interruption_point();
@@ -126,7 +126,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   else
   {
     // Default is ARA*
-    ROS_WARN("Unrecognized planner %s, using ARA*", req.planner_id.c_str());
+    ROS_WARN_NAMED("sbpl", "Unrecognized planner %s, using ARA*", req.planner_id.c_str());
     planner.reset(new ARAPlanner(env_chain.get(), true));
   }
 
@@ -141,7 +141,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   double el = (ros::WallTime::now()-plan_wt).toSec();
 
   // Print stats
-  ROS_INFO_STREAM("planner->replan: " << b_ret << ", planning time: " << el);
+  ROS_DEBUG_STREAM_NAMED("sbpl", "planner->replan: " << b_ret << ", planning time: " << el);
 
   // Do markers
   if (sbpl_viz_)
@@ -152,7 +152,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
 
   if (!b_ret)
   {
-    ROS_ERROR("Planning Failed");
+    ROS_ERROR_NAMED("sbpl", "Planning Failed");
     env_chain->getPlanningStatistics().print();
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
     return false;
@@ -160,7 +160,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
 
   if (solution_state_ids.size() == 0)
   {
-    ROS_ERROR("Success but no path?");
+    ROS_ERROR_NAMED("sbpl", "Success but no path?");
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN;
     return false;
   }
@@ -168,7 +168,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   trajectory_msgs::JointTrajectory traj;
   if (!env_chain->populateTrajectoryFromStateIDSequence(solution_state_ids, mres.trajectory.joint_trajectory))
   {
-    ROS_ERROR("Success but path bad");
+    ROS_ERROR_NAMED("sbpl", "Success but path bad");
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN;
     return false;
   }
@@ -177,10 +177,9 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   if (sbpl_params_.attempt_shortcut)
   {
     trajectory_msgs::JointTrajectory traj = mres.trajectory.joint_trajectory;
-    ROS_INFO("Planned Path is %d points", static_cast<int>(traj.points.size()));
+    ROS_DEBUG_NAMED("sbpl", "Planned Path is %d points", static_cast<int>(traj.points.size()));
     env_chain->attemptShortcut(traj, mres.trajectory.joint_trajectory);
   }
-  ROS_INFO("Path is %d points", static_cast<int>(mres.trajectory.joint_trajectory.points.size()));
 
   last_planning_statistics_ = env_chain->getPlanningStatistics();
   last_planning_statistics_.total_planning_time_ = ros::WallDuration(el);
@@ -193,12 +192,16 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   res.trajectory_->setRobotTrajectoryMsg(start_state, mres.trajectory);
   res.error_code_.val = moveit_msgs::MoveItErrorCodes::SUCCESS;
   res.planning_time_ = ros::WallDuration(el).toSec();
+
+  ROS_INFO_NAMED("sbpl", "SBPL found successful plan, with %d points, in %fs",
+                         static_cast<int>(mres.trajectory.joint_trajectory.points.size()),
+                         last_planning_statistics_.total_time_.toSec());
   return true;
 }
 
 bool SBPLPlanningContext::solve(planning_interface::MotionPlanDetailedResponse& res)
 {
-  ROS_WARN("Motion Plan Detailed Response not supported. Delegating to regular response");
+  ROS_WARN_NAMED("sbpl", "Motion Plan Detailed Response not supported. Delegating to regular response");
 
   planning_interface::MotionPlanResponse undetailed_response;
   bool result = solve(undetailed_response);
@@ -217,7 +220,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanDetailedResponse& 
 
 bool SBPLPlanningContext::terminate()
 {
-  ROS_WARN("SBPLPlanningContext::terminate unimplemented");
+  ROS_WARN_NAMED("sbpl", "SBPLPlanningContext::terminate unimplemented");
   return false;
 }
 

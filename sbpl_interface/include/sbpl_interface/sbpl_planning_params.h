@@ -141,9 +141,9 @@ struct SBPLPlanningParams
       ROS_INFO_NAMED(stream,"%40s: %s", "Distance field will contain", field_links[i].c_str());
 
     ROS_INFO_NAMED(stream,"Planner parameters:");
-    ROS_INFO_NAMED(stream,"%40s: %0.3fm", "Initial epsilon", planner_params.initial_eps);
-    ROS_INFO_NAMED(stream,"%40s: %0.3fm", "Final epsilon", planner_params.final_eps);
-    ROS_INFO_NAMED(stream,"%40s: %0.3fm", "Epsilon decrement", planner_params.dec_eps);
+    ROS_INFO_NAMED(stream,"%40s: %0.3f", "Initial epsilon", planner_params.initial_eps);
+    ROS_INFO_NAMED(stream,"%40s: %0.3f", "Final epsilon", planner_params.final_eps);
+    ROS_INFO_NAMED(stream,"%40s: %0.3f", "Epsilon decrement", planner_params.dec_eps);
     ROS_INFO_NAMED(stream,"%40s: %s", "Return after first solution ", planner_params.return_first_solution ? "yes (ignores time limits)" : "no");
     ROS_INFO_NAMED(stream,"%40s: %0.2fs", "Maximum planning time", planner_params.max_time);
     ROS_INFO_NAMED(stream,"%40s: %0.2fs", "Maximum planning time", planner_params.repair_time);

@@ -66,7 +66,7 @@ bool EnvironmentChain3D::InitializeMDPCfg(MDPConfig *MDPCfg)
 
 bool EnvironmentChain3D::InitializeEnv(const char* sEnvFile)
 {
-  ROS_INFO("[env] InitializeEnv is not implemented right now.");
+  ROS_WARN_NAMED("sbpl", "[env] InitializeEnv is not implemented right now.");
   return true;
 }
 
@@ -92,13 +92,12 @@ int EnvironmentChain3D::SizeofCreatedEnv()
 
 void EnvironmentChain3D::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NULL*/)
 {
-  ROS_DEBUG_STREAM("PrintState Not implemented");
+  //ROS_DEBUG_NAMED("sbpl", "[env] PrintState not implemented");
 }
 
 void EnvironmentChain3D::PrintEnv_Config(FILE* fOut)
 {
-  ROS_ERROR("ERROR in EnvChain... function: PrintEnv_Config is undefined");
-  throw new SBPL_Exception();
+  ROS_WARN_NAMED("sbpl", "[env] PrintEnv_Config not implemented");
 }
 
 void EnvironmentChain3D::GetSuccs(int source_state_ID,
@@ -115,13 +114,13 @@ void EnvironmentChain3D::GetSuccs(int source_state_ID,
   // From environment_robarm3d.cpp -- //goal state should be absorbing
   if (source_state_ID == goal_->stateID)
   {
-    ROS_WARN_STREAM("[EnvironmentChain3D::GetSuccs] Source state " << source_state_ID << " is a goal!");
+    ROS_WARN_STREAM_NAMED("sbpl", "[EnvironmentChain3D::GetSuccs] Source state " << source_state_ID << " is a goal!");
     return;
   }
 
   if (source_state_ID > (int)hash_data_.state_ID_to_coord_table_.size()-1)
   {
-    ROS_WARN_STREAM("[EnvironmentChain3D::GetSuccs] Source state " << source_state_ID << " is too large");
+    ROS_WARN_STREAM_NAMED("sbpl", "[EnvironmentChain3D::GetSuccs] Source state " << source_state_ID << " is too large");
     return;
   }
 
@@ -179,25 +178,25 @@ void EnvironmentChain3D::GetSuccs(int source_state_ID,
 
 void EnvironmentChain3D::GetPreds(int TargetStateID, std::vector<int>* PredIDV, std::vector<int>* cost_v)
 {
-  ROS_ERROR("ERROR in EnvChain... function: GetPreds is undefined");
+  ROS_ERROR_NAMED("sbpl", "[env] GetPreds not implemented");
   throw new SBPL_Exception();
 }
 
 bool EnvironmentChain3D::AreEquivalent(int StateID1, int StateID2)
 {
-  ROS_ERROR("ERROR in EnvChain... function: AreEquivalent is undefined");
+  ROS_ERROR_NAMED("sbpl", "[env] AreEquivalent not implemented");
   throw new SBPL_Exception();
 }
 
 void EnvironmentChain3D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 {
-  ROS_ERROR("ERROR in EnvChain..function: SetAllActionsandOutcomes is undefined");
+  ROS_ERROR_NAMED("sbpl", "[env] SetAllActionsandOutcomes not implemented");
   throw new SBPL_Exception();
 }
 
 void EnvironmentChain3D::SetAllPreds(CMDPSTATE* state)
 {
-  ROS_ERROR("ERROR in EnvChain... function: SetAllPreds is undefined");
+  ROS_ERROR_NAMED("sbpl", "[env] SetAllPreds not implemented");
   throw new SBPL_Exception();
 }
 
@@ -209,19 +208,19 @@ void EnvironmentChain3D::addMotionPrimitive(MotionPrimitivePtr& mp)
 bool EnvironmentChain3D::isStateToStateValid(const std::vector<double>& start,
                                              const std::vector<double>& end)
 {
-  ROS_WARN("EnvironmentChain3D has no validity function defined -- no collision checking will occur");
+  ROS_WARN_NAMED("sbpl", "EnvironmentChain3D has no validity function defined -- no collision checking will occur");
   return true;
 }
 
 bool EnvironmentChain3D::isStateGoal(const std::vector<double>& angles)
 {
-  ROS_ERROR("EnvironmentChain3D has no isStateGoal defined -- you are never going to get to the goal!");
+  ROS_ERROR_NAMED("sbpl", "EnvironmentChain3D has no isStateGoal defined -- you are never going to get to the goal!");
   throw new SBPL_Exception();
 }
 
 bool EnvironmentChain3D::getEndEffectorCoord(const std::vector<double>& angles, int * xyz)
 {
-  ROS_WARN("EnvironmentChain3D has no getEndEffectorCoord defined");
+  ROS_WARN_NAMED("sbpl", "[env] getEndEffectorCoord not implemented");
   return false;
 }
 
@@ -239,7 +238,7 @@ int EnvironmentChain3D::getEndEffectorHeuristic(int FromStateID, int ToStateID)
 
 int EnvironmentChain3D::getEndEffectorHeuristic(int x, int y, int z) const
 {
-  ROS_ERROR("EnvironmentChain3D has no getEndEffectorHeuristic(x,y,z) defined.");
+  ROS_ERROR_NAMED("sbpl", "[env] getEndEffectorHeuristic(x,y,z) not implemented");
   throw new SBPL_Exception();
 }
 

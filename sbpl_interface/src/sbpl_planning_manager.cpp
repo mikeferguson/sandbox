@@ -61,12 +61,12 @@ public:
     if (!ns.empty())
       nh_ = ros::NodeHandle(ns);
 
-    ROS_INFO("Initializing SBPL Planner Manager with robot \"%s\" in namespace \"%s\"", model->getName().c_str(), ns.c_str());
+    ROS_INFO_NAMED("sbpl", "Initializing SBPL Planner Manager with robot \"%s\" in namespace \"%s\"", model->getName().c_str(), ns.c_str());
 
     // Hold onto robot model
     if (!model)
     {
-      ROS_ERROR("Planner Manager received Null Robot Model");
+      ROS_ERROR_NAMED("sbpl", "Planner Manager received Null Robot Model");
       return false;
     }
     robot_model_ = model;
@@ -75,7 +75,7 @@ public:
     sbpl_params_ = new sbpl_interface::SBPLPlanningParams();
     if (!(sbpl_params_ && sbpl_params_->init(nh_)))
     {
-      ROS_ERROR("Cannot init SBPLPlanningParams");
+      ROS_ERROR_NAMED("sbpl", "Cannot init SBPLPlanningParams");
       return false;
     }
     sbpl_params_->print();
@@ -132,7 +132,7 @@ public:
 
     if (!sbpl_planning_context)
     {
-      ROS_ERROR("Failed to instanciate SBPL Manipulation Planning Context");
+      ROS_ERROR_NAMED("sbpl", "Failed to instanciate SBPL Manipulation Planning Context");
       error_code.val = moveit_msgs::MoveItErrorCodes::FAILURE; 
     }
     else
@@ -147,7 +147,7 @@ public:
 
       if (!sbpl_planning_context->init(robot_model_, params))
       {
-        ROS_ERROR("Failed to initialize SBPL Manipulation Planning Context");
+        ROS_ERROR_NAMED("sbpl", "Failed to initialize SBPL Manipulation Planning Context");
         error_code.val = moveit_msgs::MoveItErrorCodes::FAILURE; 
       }
       else

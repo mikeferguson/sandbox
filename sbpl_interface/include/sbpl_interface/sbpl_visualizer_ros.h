@@ -103,7 +103,7 @@ public:
       array.markers[i].pose.position.z = states[i][2];
     }
 
-     ROS_INFO("Visualizing %d expanded states.", static_cast<int>(states.size()));
+     ROS_DEBUG_NAMED("sbpl", "Visualizing %d expanded states.", static_cast<int>(states.size()));
      publisher_.publish(array);
      return true;
   }
