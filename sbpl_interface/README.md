@@ -1,6 +1,6 @@
 # SBPL for MoveIt
 
-This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
+This creates a (hopefully) cleaner interface to SBPL for n-DOF arm planning.
 
 ## Overall status:
  * Supports joint and pose constrained goals
@@ -10,14 +10,12 @@ This creates a (hopefully) cleaner interface to SBPL for 7-DOF arm planning.
 
 ## TODO (in order of expected/anticipated severeness)
  * Look into cost function (env3d::calculateCost)
- * Load motion primitives from parameters, with decent defaults if no parameter exists. (sbpl_planner_params.h)
  * There is no smoothness cost assigned to motion primitive transitions.
  * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
  * BUG: Need to implement terminate to work with pick/place
  * BUG: Distance field computations appear not to fill all occupied cells for a box?
  * ENHANCEMENT: use MotionPlanRequest/workspace_parameters to define BFS/distance field size, overriding sbpl_params.
- * ENHANCEMENT: use num_planning_attempts
- * ENHANCEMENT: add snap_to_rpy (orientation solver)
+ * ENHANCEMENT: add snap_to_rpy (orientation solver from sbpl_arm_planner)
 
 ## Required Components
  * PlanningData - the actual graph data structure

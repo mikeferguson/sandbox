@@ -80,6 +80,16 @@ public:
     }
     sbpl_params_->print();
 
+    // Load motion primitives
+    const std::vector<const moveit::core::JointModelGroup*> groups = model->getJointModelGroups();
+    for (size_t i = 0; i < groups.size(); ++i)
+    {
+      std::string group_name = groups[i]->getName();
+      int group_size = groups[i]->getVariableCount();
+      ros::NodeHandle n(nh_, "primitives/" + group_name);
+      group_primitives[group_name] = MotionPrimitivesLoader(group_size, n);
+    }
+
     // Setup visualization (handles its own parameters)
     sbpl_viz_ = new SBPLVisualizerROS(nh_);
 
@@ -127,9 +137,9 @@ public:
     }
     else
     {
-      // TODO: if req has orientation constraints and params include orientation sovler, add it
-      // TODO: if req has position and orientation constraints and params include IK solver, add it
+      // New param instance, add static motion primitives for this group
       SBPLPlanningParams params(*sbpl_params_);
+      params.primitives = group_primitives[req.group_name];
 
       sbpl_planning_context->setMotionPlanRequest(req);
       sbpl_planning_context->setPlanningScene(planning_scene);
@@ -160,6 +170,7 @@ private:
   robot_model::RobotModelConstPtr robot_model_;
   sbpl_interface::SBPLPlanningParams* sbpl_params_;
   sbpl_interface::SBPLVisualizerROS* sbpl_viz_;
+  mutable std::map<std::string, MotionPrimitivesLoader> group_primitives;  // eww
 };
 
 }  // namespace sbpl_interface

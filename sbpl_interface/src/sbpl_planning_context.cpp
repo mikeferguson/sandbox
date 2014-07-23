@@ -82,17 +82,22 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   const planning_scene::PlanningSceneConstPtr& scene = getPlanningScene();
 
   // Update params
-  sbpl_interface::SBPLPlanningParams local_params(sbpl_params_);
   if (req.allowed_planning_time > 0.0)
-    local_params.planner_params.max_time = req.allowed_planning_time;
+    sbpl_params_.planner_params.max_time = req.allowed_planning_time;
 
-  // Setup environment
+  // Create environment
   ros::WallTime wt = ros::WallTime::now();
   boost::shared_ptr<EnvironmentChain3DMoveIt> env_chain(new EnvironmentChain3DMoveIt);
+
+  // Add motion primitives to environment
+  for (size_t i = 0; i < sbpl_params_.primitives.prims.size(); ++i)
+    env_chain->addMotionPrimitive(sbpl_params_.primitives.prims[i]);
+
+  // Setup environment with scene, etc
   if (!env_chain->setupForMotionPlan(scene,
                                      req,
                                      mres,
-                                     local_params))
+                                     sbpl_params_))
   {
     ROS_ERROR("Unable to setup environment chain.");
     return false;
@@ -132,7 +137,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
 
   // Plan
   ros::WallTime plan_wt = ros::WallTime::now();
-  bool b_ret = planner->replan(&solution_state_ids, local_params.planner_params, &solution_cost);
+  bool b_ret = planner->replan(&solution_state_ids, sbpl_params_.planner_params, &solution_cost);
   double el = (ros::WallTime::now()-plan_wt).toSec();
 
   // Print stats

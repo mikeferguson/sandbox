@@ -45,19 +45,11 @@
 namespace sbpl_interface
 {
 
-enum motion_primitive_types
-{
-  STATIC,
-  SNAP_TO_JOINT,
-  SNAP_TO_XYZRPY,
-  SNAP_TO_RPY
-};
-
 /** \brief Base class for a motion primitive */
 class MotionPrimitive
 {
 public:
-  MotionPrimitive(int type) : type_(type)
+  MotionPrimitive()
   {
   }
 
@@ -80,14 +72,6 @@ public:
     *end = start;  // this is truly a stupid, worthless motion primitive
     return true;
   }
-
-  int type()
-  {
-    return type_;
-  }
-
-protected:
-  int type_;
 };
 
 typedef boost::shared_ptr<MotionPrimitive> MotionPrimitivePtr;
@@ -107,7 +91,6 @@ public:
   StaticMotionPrimitive(const std::vector<double>& action,
                         double lower_thresh = -1000.0,
                         double upper_thresh = 1000.0) :
-    MotionPrimitive(STATIC),
     action_(action),
     lower_(lower_thresh),
     upper_(upper_thresh)
@@ -147,7 +130,6 @@ public:
    */
   SnapToJointMotionPrimitive(const std::vector<double>& goal,
                              double xyz_threshold) :
-    MotionPrimitive(SNAP_TO_JOINT),
     action_(goal),
     thresh_(xyz_threshold)
   {
@@ -177,7 +159,6 @@ public:
                               robot_state::RobotStatePtr state,
                               const robot_model::JointModelGroup* group,
                               double xyz_threshold) :
-    MotionPrimitive(SNAP_TO_XYZRPY),
     state_(*state),
     group_(group),
     thresh_(xyz_threshold)
@@ -208,6 +189,84 @@ private:
   const robot_model::JointModelGroup* group_;
   Eigen::Affine3d goal_;
   double thresh_;
+};
+
+/** \brief Struct that loads/generates motion primitives */
+struct MotionPrimitivesLoader
+{
+  MotionPrimitivesLoader()
+  {
+  }
+
+  MotionPrimitivesLoader(const int group_size,
+                         ros::NodeHandle& nh)
+  {
+    // Adaptive Motion Primitives
+    nh.param("joint_snap", use_joint_snap, true);
+    nh.param("xyzrpy_snap", use_xyzrpy_snap, true);
+    nh.param("rpy_snap", use_rpy_snap, true);
+
+    nh.param("joint_snap_thresh", joint_snap_thresh, 0.1);
+    nh.param("xyzrpy_snap_thresh", xyzrpy_snap_thresh, 0.2);
+
+    // Simple Motion Primitives
+    if (nh.hasParam("simple"))
+    {
+      XmlRpc::XmlRpcValue prim_list;
+      nh.getParam("simple", prim_list);
+      for (size_t i = 0; i < prim_list.size(); ++i)
+      {
+        ROS_ASSERT(prim_list[i].getType() == XmlRpc::XmlRpcValue::TypeArray);
+        ROS_ASSERT(prim_list[i][0].getType() == XmlRpc::XmlRpcValue::TypeArray);
+        std::vector<double> action;
+        for (size_t j = 0; j < prim_list[i][0].size(); ++j)
+          action.push_back(angles::from_degrees(static_cast<double>(prim_list[i][0][j])));
+
+        MotionPrimitivePtr s;
+        if (prim_list[i].size() == 3)
+        {
+          // motion primitive with min & max distance
+          s.reset(new StaticMotionPrimitive(action,
+                                            static_cast<double>(prim_list[i][1]),
+                                            static_cast<double>(prim_list[i][2])));
+        }
+        else if (prim_list[i].size() == 2)
+        {
+          // motion primitive with min dist
+          s.reset(new StaticMotionPrimitive(action,
+                                            static_cast<double>(prim_list[i][1])));
+        }
+        else
+        {
+          s.reset(new StaticMotionPrimitive(action));
+        }
+        prims.push_back(s);
+      }
+    }
+    else
+    {
+      // Load defaults
+      for (int i = 0; i < group_size; ++i)
+      {
+        std::vector<double> action(group_size,0.0);
+
+        action[i] = angles::from_degrees(4);
+        MotionPrimitivePtr s1(new StaticMotionPrimitive(action));
+        prims.push_back(s1);
+
+        action[i] = -action[i];
+        MotionPrimitivePtr s2(new StaticMotionPrimitive(action));
+        prims.push_back(s2);
+      }
+    }
+  }
+
+  std::vector<MotionPrimitivePtr> prims;
+  bool use_joint_snap;
+  double joint_snap_thresh;
+  bool use_xyzrpy_snap;
+  double xyzrpy_snap_thresh;
+  bool use_rpy_snap;
 };
 
 }  // namespace sbpl_interface

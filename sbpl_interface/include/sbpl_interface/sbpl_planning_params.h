@@ -61,12 +61,7 @@ struct SBPLPlanningParams
     field_origin_x(-0.5),
     field_origin_y(-1.0),
     field_origin_z(0.0),
-    planner_params(60),
-    use_joint_snap(true),
-    joint_snap_thresh(0.1),
-    use_xyzrpy_snap(true),
-    xyzrpy_snap_thresh(0.2),
-    use_rpy_snap(true)
+    planner_params(60)
   {
   }
 
@@ -89,19 +84,16 @@ struct SBPLPlanningParams
   double field_origin_x;    /// origin of the distance field
   double field_origin_y;
   double field_origin_z;
-  std::vector<std::string> field_links;  // links to add to distance field
+  std::vector<std::string> field_links;  /// links to add to distance field
 
   // Planner
   ReplanParams planner_params;
 
   // Motion Primitives
-  std::vector<MotionPrimitivePtr> prims;
-  bool use_joint_snap;
-  double joint_snap_thresh;
-  bool use_xyzrpy_snap;
-  double xyzrpy_snap_thresh;
-  bool use_rpy_snap;
+  MotionPrimitivesLoader primitives;
 
+  /** @brief Initialize the parameters, need robot model and nodehandle that
+             defines the proper namespace to use for params */
   bool init(ros::NodeHandle& nh)
   {
     // Env
@@ -135,72 +127,7 @@ struct SBPLPlanningParams
     nh.param("planner/max_time", planner_params.max_time, 60.0);
     nh.param("planner/repair_time", planner_params.repair_time, -1.0);
 
-    // Adaptive Motion Primitives
-    nh.param("prim/joint_snap", use_joint_snap, use_joint_snap);
-    nh.param("prim/xyzrpy_snap", use_xyzrpy_snap, use_xyzrpy_snap);
-    nh.param("prim/rpy_snap", use_rpy_snap, use_rpy_snap);
-
-    nh.param("prim/joint_snap_thresh", joint_snap_thresh, joint_snap_thresh);
-    nh.param("prim/xyzrpy_snap_thresh", xyzrpy_snap_thresh, xyzrpy_snap_thresh);
-
-    // Simple Motion Primitives
-    if (nh.hasParam("prim/simple"))
-    {
-      XmlRpc::XmlRpcValue prim_list;
-      nh.getParam("prim/simple", prim_list);
-      for (size_t i = 0; i < prim_list.size(); ++i)
-      {
-        ROS_ASSERT(prim_list[i].getType() == XmlRpc::XmlRpcValue::TypeArray);
-        ROS_ASSERT(prim_list[i][0].getType() == XmlRpc::XmlRpcValue::TypeArray);
-        std::vector<double> action;
-        for (size_t j = 0; j < prim_list[i][0].size(); ++j)
-          action.push_back(angles::from_degrees(static_cast<double>(prim_list[i][0][j])));
-
-        MotionPrimitivePtr s;
-        if (prim_list[i].size() == 3)
-        {
-          // motion primitive with min & max distance
-          s.reset(new StaticMotionPrimitive(action,
-                                            static_cast<double>(prim_list[i][1]),
-                                            static_cast<double>(prim_list[i][2])));
-        }
-        else if (prim_list[i].size() == 2)
-        {
-          // motion primitive with min dist
-          s.reset(new StaticMotionPrimitive(action,
-                                            static_cast<double>(prim_list[i][1])));
-        }
-        else
-        {
-          s.reset(new StaticMotionPrimitive(action));
-        }
-        prims.push_back(s);
-      }
-    }
-    else
-    {
-      // Load defaults
-      for (int i = 0; i < 7; ++i)  /* TODO 7 needs to be parameterized */
-      {
-        std::vector<double> action(7,0.0);
-
-        action[i] = angles::from_degrees(4);
-        MotionPrimitivePtr s1(new StaticMotionPrimitive(action));
-        prims.push_back(s1);
-
-        action[i] = -action[i];
-        MotionPrimitivePtr s2(new StaticMotionPrimitive(action));
-        prims.push_back(s2);
-      }
-    }
-
     return true;
-  }
-
-  bool init()
-  {
-    ros::NodeHandle nh("~");
-    init(nh);
   }
 
   void print(std::string stream)
@@ -221,8 +148,6 @@ struct SBPLPlanningParams
     ROS_INFO_NAMED(stream,"%40s: %0.2fs", "Maximum planning time", planner_params.max_time);
     ROS_INFO_NAMED(stream,"%40s: %0.2fs", "Maximum planning time", planner_params.repair_time);
     ROS_INFO_NAMED(stream," ");
-
-    // TODO: print motion primitives
   }
 
   void print()

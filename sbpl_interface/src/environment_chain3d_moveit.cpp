@@ -106,13 +106,6 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     return false;
   }
 
-  // Setup basic motion primitives
-  // (advanced ones will be added later based on goal constraints)
-  for (size_t i = 0; i < params_.prims.size(); ++i)
-  {
-    addMotionPrimitive(params_.prims[i]);
-  }
-
   // Setup start position in discrete space
   std::vector<int> start_coords;
   convertJointAnglesToCoord(start_joint_values, start_coords);
@@ -180,10 +173,10 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     ROS_INFO_STREAM("[Goal coords] " << dbg_ss.str());
 
     // Planning in joint space -- should add a snap to joints primitive
-    if (params_.use_joint_snap)
+    if (params_.primitives.use_joint_snap)
     {
       MotionPrimitivePtr snap(new SnapToJointMotionPrimitive(goal_joint_values,
-                                                             params_.joint_snap_thresh));
+                                                             params_.primitives.joint_snap_thresh));
       addMotionPrimitive(snap);
       ROS_INFO("Added joint snap motion prim");
     }
@@ -215,12 +208,12 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
     ROS_INFO_STREAM("[Goal] " << dbg_ss.str());
 
     // Add snap to xyzrpy primitive
-    if (params_.use_xyzrpy_snap)
+    if (params_.primitives.use_xyzrpy_snap)
     {
       MotionPrimitivePtr snap(new SnapToXYZRPYMotionPrimitive(mreq.goal_constraints[0].position_constraints[0].constraint_region.primitive_poses[0],
                                                               mreq.goal_constraints[0].orientation_constraints[0].orientation,
                                                               state_, joint_model_group_,
-                                                              params_.xyzrpy_snap_thresh));
+                                                              params_.primitives.xyzrpy_snap_thresh));
       addMotionPrimitive(snap);
       ROS_INFO("Added xyzrpy snap motion prim");
     }
@@ -267,7 +260,6 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
         tf::poseEigenToMsg(t, pose);
         field_->addShapeToField(shapes[j].get(), pose);
       }
-      ROS_INFO("Done");
     }
     planning_statistics_.distance_field_setup_time_ = ros::WallTime::now() - distance_start;
 
