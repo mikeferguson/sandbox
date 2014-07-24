@@ -8,12 +8,18 @@ This creates a (hopefully) cleaner interface to SBPL for n-DOF arm planning.
  * Lots of parameters, described in sbpl_planning_params.h. See also
    [ubr1](https://github.com/mikeferguson/ubr1_preview/blob/sbpl/ubr1_moveit/config/sbpl_planning.yaml)
    config for examples.
- * Pick works (although slow), place is currently not happy
+ * Works with pick/place -- but only single threaded
  * Collision checking is slow -- planning takes about 3x longer than the groovy/sbpl_arm_planner
 
 ## TODO (in order of expected/anticipated severeness)
  * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
- * BUG: Need to implement terminate to work with pick/place
+ * BUG: Need to implement terminate to work with multithreaded pick/place
+ * BUG: Something isn't thread happy -- causes assertion in pick/place. Appears to be related to BFS thread?
+   However this did not occur before with BFS? Maybe something in the motion primitives?
+
+       move_group: /usr/include/boost/thread/pthread/recursive_mutex.hpp:101:
+       boost::recursive_mutex::~recursive_mutex(): Assertion `!pthread_mutex_destroy(&m)' failed
+
  * BUG: Distance field computations appear not to fill all occupied cells for a box?
  * ENHANCEMENT: use MotionPlanRequest/workspace_parameters to define BFS/distance field size, overriding sbpl_params.
  * ENHANCEMENT: add snap_to_rpy (orientation solver from sbpl_arm_planner)
