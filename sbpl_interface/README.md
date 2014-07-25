@@ -11,6 +11,38 @@ This creates a (hopefully) cleaner interface to SBPL for n-DOF arm planning.
  * Works with pick/place -- but only single threaded
  * Collision checking is slow -- planning takes about 3x longer than the groovy/sbpl_arm_planner
 
+## Using This
+
+There are currently several repositories to checkout from source: (these same instructions should work for indigo, except you have to build and install sbpl from source as there is no ros-indigo-sbpl yet)
+
+    sudo apt-get install ros-hydro-sbpl ros-hydro-moveit-full
+    sudo apt-get install ros-hydro-gazebo-ros ros-hydro-moveit-python ros-hydro-grasping-msgs
+    mkdir -p ~/catkin_ws/src
+    cd ~/catkin_ws/src
+    git clone -b sbpl https://github.com/mikeferguson/ubr1_preview.git
+    git clone https://github.com/mikeferguson/sandbox.git
+    git clone -b single_threaded_pick_place https://github.com/mikeferguson/moveit_ros.git
+    cd ~/catkin_ws
+    source /opt/ros/hydro/setup.bash
+    catkin_make
+
+After the build has completed, you can quickly test with the following (each command in its own window):
+
+    roslaunch ubr1_gazebo simulation.launch (you can close the gazebo gui after it loads and open RVIZ instead)
+    roslaunch ubr1_moveit move_group.launch
+    rosrun moveit_planners_sbpl joint_goal.py (or pose_based_goal.py)
+
+For a test of the grasping pipeline:
+
+    roslaunch ubr1_gazebo simulation_grasping.launch
+    roslaunch ubr1_grasping grasping.launch
+    rosrun ubr1_grasping pick_and_place.py --once
+
+Available visualization in RVIZ:
+
+ * MoveIt MotionPlanning plugin -- be sure to set planning scene topic to /move_group/monitored_planning_scene. This can also be used to run interactive markers.
+ * MarkerArray on topic /move_group/visualization will show the collision field, and also show the expanded states.
+
 ## TODO (in order of expected/anticipated severeness)
  * Distance field is recreated each time env_chain3d_moveit.setupForMotionPlan is called (wasteful)
  * BUG: Need to implement terminate to work with multithreaded pick/place
