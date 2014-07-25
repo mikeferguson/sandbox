@@ -17,8 +17,8 @@ This creates a (hopefully) cleaner interface to SBPL for n-DOF arm planning.
  * BUG: Something isn't thread happy -- causes assertion in pick/place. Appears to be related to BFS thread?
    However this did not occur before with BFS? Maybe something in the motion primitives?
 
-       move_group: /usr/include/boost/thread/pthread/recursive_mutex.hpp:101:
-       boost::recursive_mutex::~recursive_mutex(): Assertion `!pthread_mutex_destroy(&m)' failed
+        move_group: /usr/include/boost/thread/pthread/recursive_mutex.hpp:101:
+        boost::recursive_mutex::~recursive_mutex(): Assertion `!pthread_mutex_destroy(&m)' failed
 
  * BUG: Distance field computations appear not to fill all occupied cells for a box?
  * ENHANCEMENT: use MotionPlanRequest/workspace_parameters to define BFS/distance field size, overriding sbpl_params.
