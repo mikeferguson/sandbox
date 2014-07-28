@@ -97,11 +97,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   ROS_DEBUG_STREAM_NAMED("sbpl", "[Start angles] " << dbg_ss.str());
 
   // Check start state for collision
-  collision_detection::CollisionRequest creq;
-  collision_detection::CollisionResult cres;
-  creq.group_name = planning_group_;
-  planning_scene->checkCollision(creq, cres, *state_, planning_scene_->getAllowedCollisionMatrix());
-  if (cres.collision)
+  if (!isCollisionFree(state_))
   {
     ROS_ERROR_STREAM_NAMED("sbpl", "Start state is in collision. Can't plan");
     mres.error_code.val = moveit_msgs::MoveItErrorCodes::START_STATE_IN_COLLISION;
@@ -144,8 +140,7 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   // Check goal state (if any) for collisions
   if (mreq.goal_constraints[0].joint_constraints.size() > 0)
   {
-    planning_scene->checkCollision(creq, cres, *state_, planning_scene_->getAllowedCollisionMatrix());
-    if (cres.collision)
+    if (!isCollisionFree(state_))
     {
       ROS_ERROR_STREAM_NAMED("sbpl", "Goal state is in collision.  Can't plan");
       mres.error_code.val = moveit_msgs::MoveItErrorCodes::GOAL_IN_COLLISION;
@@ -451,7 +446,7 @@ bool EnvironmentChain3DMoveIt::isCollisionFree(robot_state::RobotStatePtr rs)
   collision_detection::CollisionResult res;
   req.group_name = planning_group_;
 
-  planning_scene_->checkCollision(req, res, *rs);
+  planning_scene_->checkCollision(req, res, *rs, planning_scene_->getAllowedCollisionMatrix());
   planning_statistics_.coll_checks_++;
 
   planning_statistics_.total_coll_check_time_ += ros::WallTime::now() - before;
