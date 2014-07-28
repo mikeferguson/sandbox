@@ -472,9 +472,6 @@ bool EnvironmentChain3DMoveIt::interpolateAndCollisionCheck(
   rs_2->setJointGroupPositions(planning_group_, angles2);
   rs_temp->setJointGroupPositions(planning_group_, angles1);
 
-  collision_detection::CollisionRequest req;
-  req.group_name = planning_group_;
-
   int maximum_moves = getJointDistanceIntegerMax(angles1, angles2, params_.interpolation_distance);
 
   // Don't collision check endpoints
