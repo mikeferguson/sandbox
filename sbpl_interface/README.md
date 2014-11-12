@@ -166,3 +166,4 @@ integers. A summary of costs follows:
    * Update BFS to handle multiple start points.
  * Support collision checking in distance field (see MoveIt_experimental CollisionWorldHybrid,
    https://github.com/ros-planning/moveit_core/commit/e1cb349ecfd2dad8b61d1b0d3717036175ce61ba)
+   see also moveit_advanced code (doesn't do hybrid, really isn't finished)
