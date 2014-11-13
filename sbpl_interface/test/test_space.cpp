@@ -47,10 +47,12 @@ TEST(testSpace, testFieldBFS)
                                                  params.field_origin_x, params.field_origin_y, params.field_origin_z,
                                                  params.field_z /* max distance, all cells initialize to this */);
 
+  // Check size
   EXPECT_EQ(100, field.getXNumCells());
   EXPECT_EQ(100, field.getYNumCells());
   EXPECT_EQ(100, field.getZNumCells());  
 
+  // Add an obstacle
   EigenSTL::vector_Vector3d points;
   Eigen::Vector3d point(1., 0., 1.);
   points.push_back(point);
@@ -63,6 +65,13 @@ TEST(testSpace, testFieldBFS)
   EXPECT_EQ(100, y);
   EXPECT_EQ(100, z);
 
+  // Check coordinates
+  field.worldToGrid(0.0, 0.0, 0.0, x, y, z);
+  EXPECT_EQ(25, x);
+  EXPECT_EQ(50, y);
+  EXPECT_EQ(0, z);
+
+  params.planning_link_sphere_radius = 0.05;
   int walls = sbpl_interface::fillBFSfromField(&field, &bfs, params);
 
   EXPECT_EQ(81, walls);
@@ -72,8 +81,16 @@ TEST(testSpace, testFieldBFS)
   EXPECT_EQ(0.0, field.getDistance(75, 50, 50));
   EXPECT_TRUE(bfs.isWall(75, 50, 50));
 
+  EXPECT_EQ(0.1, field.getDistance(70, 50, 50));
+  EXPECT_EQ(0.08, field.getDistance(71, 50, 50));
+  EXPECT_EQ(0.06, field.getDistance(72, 50, 50));
+  EXPECT_EQ(0.04, field.getDistance(73, 50, 50));
+  EXPECT_EQ(0.02, field.getDistance(74, 50, 50));
+  EXPECT_EQ(0.02, field.getDistance(76, 50, 50));
   EXPECT_EQ(0.04, field.getDistance(77, 50, 50));
   EXPECT_EQ(0.06, field.getDistance(78, 50, 50));
+  EXPECT_EQ(0.08, field.getDistance(79, 50, 50));
+  EXPECT_EQ(0.1, field.getDistance(80, 50, 50));
   EXPECT_FALSE(bfs.isWall(72, 50, 50));
   EXPECT_TRUE(bfs.isWall(73, 50, 50));
   EXPECT_TRUE(bfs.isWall(77, 50, 50));
