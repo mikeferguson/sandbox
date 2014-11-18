@@ -38,6 +38,7 @@
 #ifndef _MOVEIT_SBPL_INTERFACE_SBPL_VISUALIZER_ROS_
 #define _MOVEIT_SBPL_INTERFACE_SBPL_VISUALIZER_ROS_
 
+#include <algorithm>
 #include <sbpl_interface/environment_chain3d_moveit.h>
 
 namespace sbpl_interface
@@ -47,7 +48,7 @@ class SBPLVisualizerROS
 {
 public:
 
-  SBPLVisualizerROS(ros::NodeHandle& nh)
+  SBPLVisualizerROS(ros::NodeHandle& nh) : num_states_(0)
   {
     nh.param("visual/goal", publish_goal_, false);
     nh.param("visual/field", publish_field_, false);
@@ -75,7 +76,7 @@ public:
     marker.header.stamp = ros::Time::now();
     marker.ns = "expanded_states";
     marker.type = visualization_msgs::Marker::CUBE;
-    marker.action =  visualization_msgs::Marker::ADD;
+    marker.action = visualization_msgs::Marker::ADD;
     marker.scale.x = env->getParams().field_resolution;
     marker.scale.y = env->getParams().field_resolution;
     marker.scale.z = env->getParams().field_resolution;
@@ -89,7 +90,7 @@ public:
     }
 
     visualization_msgs::MarkerArray array;
-    array.markers.resize(states.size());
+    array.markers.resize(std::max(states.size(), num_states_));
     for (size_t i = 0; i < states.size(); ++i)
     {
       array.markers[i] = marker;
@@ -102,10 +103,18 @@ public:
       array.markers[i].pose.position.y = states[i][1];
       array.markers[i].pose.position.z = states[i][2];
     }
+    for (size_t i = states.size(); i < num_states_; ++i)
+    {
+      array.markers[i] = marker;
+      array.markers[i].id = i;
+      array.markers[i].action = visualization_msgs::Marker::DELETE;
+    }
 
-     ROS_DEBUG_NAMED("sbpl", "Visualizing %d expanded states.", static_cast<int>(states.size()));
-     publisher_.publish(array);
-     return true;
+    num_states_ = states.size();
+
+    ROS_DEBUG_NAMED("sbpl", "Visualizing %d expanded states.", static_cast<int>(states.size()));
+    publisher_.publish(array);
+    return true;
   }
 
   /** @brief Publish the BFS */
@@ -137,6 +146,8 @@ public:
 
 private:
   ros::Publisher publisher_;
+
+  size_t num_states_;  /// The number of states that were last published
 
   bool publish_goal_;
   bool publish_field_;
