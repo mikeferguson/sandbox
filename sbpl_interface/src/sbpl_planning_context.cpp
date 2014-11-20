@@ -47,7 +47,8 @@ namespace sbpl_interface
 
 SBPLPlanningContext::SBPLPlanningContext(const std::string& name, const std::string& group) :
   PlanningContext(name, group),
-  sbpl_viz_(NULL)
+  sbpl_viz_(NULL),
+  terminated_(false)
 {
 }
 
@@ -87,57 +88,69 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
 
   // Create environment
   ros::WallTime wt = ros::WallTime::now();
-  boost::shared_ptr<EnvironmentChain3DMoveIt> env_chain(new EnvironmentChain3DMoveIt);
+  env_chain_.reset(new EnvironmentChain3DMoveIt);
 
   // Add motion primitives to environment
   for (size_t i = 0; i < sbpl_params_.primitives.prims.size(); ++i)
-    env_chain->addMotionPrimitive(sbpl_params_.primitives.prims[i]);
+    env_chain_->addMotionPrimitive(sbpl_params_.primitives.prims[i]);
 
   // Setup environment with scene, etc
-  if (!env_chain->setupForMotionPlan(scene,
-                                     req,
-                                     mres,
-                                     sbpl_params_))
+  if (!env_chain_->setupForMotionPlan(scene,
+                                      req,
+                                      mres,
+                                      sbpl_params_))
   {
     ROS_ERROR_NAMED("sbpl", "Unable to setup environment chain.");
     return false;
   }
-  boost::this_thread::interruption_point();
 
   // Create planner
   boost::shared_ptr<SBPLPlanner> planner;
   if (req.planner_id.empty() || req.planner_id == "ARA*")
   {
-    planner.reset(new ARAPlanner(env_chain.get(), true));
+    planner.reset(new ARAPlanner(env_chain_.get(), true));
   }
   else if (req.planner_id == "AnytimeD*")
   {
-    planner.reset(new ADPlanner(env_chain.get(), true));
+    planner.reset(new ADPlanner(env_chain_.get(), true));
   }
   /* These don't seem to work
   else if (req.planner_id == "ANA*")
   {
-    planner.reset(new anaPlanner(env_chain.get(), true));
+    planner.reset(new anaPlanner(env_chain_.get(), true));
   }
   else if (req.planner_id == "R*")
   {
-    planner.reset(new RSTARPlanner(env_chain.get(), true));
+    planner.reset(new RSTARPlanner(env_chain_.get(), true));
   }*/
   else
   {
     // Default is ARA*
     ROS_WARN_NAMED("sbpl", "Unrecognized planner %s, using ARA*", req.planner_id.c_str());
-    planner.reset(new ARAPlanner(env_chain.get(), true));
+    planner.reset(new ARAPlanner(env_chain_.get(), true));
   }
 
   // Setup planner
   planner->force_planning_from_scratch();
-  planner->set_start(env_chain->getStartID());
-  planner->set_goal(env_chain->getGoalID());
+  planner->set_start(env_chain_->getStartID());
+  planner->set_goal(env_chain_->getGoalID());
 
   // Plan
   ros::WallTime plan_wt = ros::WallTime::now();
-  bool b_ret = planner->replan(&solution_state_ids, sbpl_params_.planner_params, &solution_cost);
+  bool b_ret = false;
+  try
+  {
+    boost::mutex::scoped_lock lock(term_mutex_);
+    if (!terminated_)
+    {
+      lock.unlock();
+      b_ret = planner->replan(&solution_state_ids, sbpl_params_.planner_params, &solution_cost);
+    }
+  }
+  catch (...)
+  {
+    // Nothing to do?
+  }
   double el = (ros::WallTime::now()-plan_wt).toSec();
 
   // Print stats
@@ -146,14 +159,17 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   // Do markers
   if (sbpl_viz_)
   {
-    sbpl_viz_->publishExpandedStates(env_chain.get());
-    sbpl_viz_->publishDistanceField(env_chain.get());
+    sbpl_viz_->publishExpandedStates(env_chain_.get());
+    sbpl_viz_->publishDistanceField(env_chain_.get());
   }
 
   if (!b_ret)
   {
-    ROS_ERROR_NAMED("sbpl", "Planning Failed");
-    env_chain->getPlanningStatistics().print();
+    if (terminated_)
+      ROS_WARN_NAMED("sbpl", "Planning terminated");
+    else
+      ROS_ERROR_NAMED("sbpl", "Planning Failed");
+    env_chain_->getPlanningStatistics().print();
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::PLANNING_FAILED;
     return false;
   }
@@ -166,7 +182,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   }
 
   trajectory_msgs::JointTrajectory traj;
-  if (!env_chain->populateTrajectoryFromStateIDSequence(solution_state_ids, mres.trajectory.joint_trajectory))
+  if (!env_chain_->populateTrajectoryFromStateIDSequence(solution_state_ids, mres.trajectory.joint_trajectory))
   {
     ROS_ERROR_NAMED("sbpl", "Success but path bad");
     res.error_code_.val = moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN;
@@ -178,10 +194,10 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   {
     trajectory_msgs::JointTrajectory traj = mres.trajectory.joint_trajectory;
     ROS_DEBUG_NAMED("sbpl", "Planned Path is %d points", static_cast<int>(traj.points.size()));
-    env_chain->attemptShortcut(traj, mres.trajectory.joint_trajectory);
+    env_chain_->attemptShortcut(traj, mres.trajectory.joint_trajectory);
   }
 
-  last_planning_statistics_ = env_chain->getPlanningStatistics();
+  last_planning_statistics_ = env_chain_->getPlanningStatistics();
   last_planning_statistics_.total_planning_time_ = ros::WallDuration(el);
   last_planning_statistics_.total_time_ = ros::WallTime::now() - wt;
   last_planning_statistics_.print();
@@ -220,8 +236,11 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanDetailedResponse& 
 
 bool SBPLPlanningContext::terminate()
 {
-  ROS_WARN_NAMED("sbpl", "SBPLPlanningContext::terminate unimplemented");
-  return false;
+  boost::mutex::scoped_lock lock(term_mutex_);
+  terminated_ = true;
+  if (env_chain_)
+    env_chain_->terminate();
+  return true;
 }
 
 void SBPLPlanningContext::clear()

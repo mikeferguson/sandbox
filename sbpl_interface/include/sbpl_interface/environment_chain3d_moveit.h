@@ -75,6 +75,9 @@ public:
 
   std::string getPlanningFrame() { return state_->getRobotModel()->getModelFrame(); }
 
+  void terminate() {terminate_ = true;}
+  bool termnated() { return terminate_; }
+
 protected:
   /** @brief Do collision checking, check path & joint limit constraints. */
   virtual bool isStateToStateValid(const std::vector<double>& start,
@@ -115,6 +118,8 @@ protected:
 
   distance_field::DistanceField* field_;
   BFS_3D *bfs_;
+
+  bool terminate_;
 };
 
 /**

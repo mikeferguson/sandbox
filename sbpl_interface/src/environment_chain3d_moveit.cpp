@@ -55,7 +55,8 @@ EnvironmentChain3DMoveIt::EnvironmentChain3DMoveIt() :
   goal_constraint_set_(NULL),
   path_constraint_set_(NULL),
   bfs_(NULL),
-  field_(NULL)
+  field_(NULL),
+  terminate_(false)
 {
 }
 
@@ -371,6 +372,9 @@ bool EnvironmentChain3DMoveIt::continuousXYZtoDiscreteXYZ(
 
 int EnvironmentChain3DMoveIt::calculateCost(EnvChain3dHashEntry* from, EnvChain3dHashEntry* to)
 {
+  if (terminate_)
+    throw "Planner Termination Requested";
+
   // Distance to obstacle in state s'
   double dist_to_obs = field_->getDistance(to->xyz[0], to->xyz[1], to->xyz[2]);
 
@@ -397,7 +401,6 @@ int EnvironmentChain3DMoveIt::calculateCost(EnvChain3dHashEntry* from, EnvChain3
 
 int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int x, int y, int z) const
 {
-  boost::this_thread::interruption_point();
   if (params_.use_bfs)
   {
     // Return the BFS cost to goal

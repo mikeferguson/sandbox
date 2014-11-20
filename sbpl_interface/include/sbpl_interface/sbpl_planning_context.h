@@ -79,7 +79,16 @@ protected:
   sbpl_interface::SBPLPlanningParams sbpl_params_;
   sbpl_interface::SBPLVisualizerROS* sbpl_viz_;
 
+  // The environment used for the planner. This has to be
+  // a class member as we are using this class to terminate
+  // the planner when terminate() is called.
+  boost::shared_ptr<EnvironmentChain3DMoveIt> env_chain_;
+
   PlanningStatistics last_planning_statistics_;
+
+  // Flag for termination
+  boost::mutex term_mutex_;
+  bool terminated_;
 };
 
 }  // namespace sbpl_interface
