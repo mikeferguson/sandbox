@@ -372,6 +372,10 @@ bool EnvironmentChain3DMoveIt::continuousXYZtoDiscreteXYZ(
 
 int EnvironmentChain3DMoveIt::calculateCost(EnvChain3dHashEntry* from, EnvChain3dHashEntry* to)
 {
+  // SBPL replan() runs until solution or time limit, no way to cleanly terminate
+  // from the outside API. However, this function gets called by planner, we raise
+  // an exception to terminate planning from outside and replan() is wrapped in
+  // a try/catch block.
   if (terminate_)
     throw "Planner Termination Requested";
 
