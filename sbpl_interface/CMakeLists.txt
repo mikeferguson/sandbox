@@ -7,8 +7,6 @@ endif()
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SBPL REQUIRED sbpl)
-include_directories(${SBPL_INCLUDE_DIRS})
-link_directories(${SBPL_LIBRARY_DIRS})
 
 find_package(Boost REQUIRED system filesystem date_time thread serialization)
 find_package(catkin REQUIRED COMPONENTS
@@ -33,17 +31,14 @@ catkin_package(
     moveit_core
 )
 
-include_directories(SYSTEM
-                    ${EIGEN_INCLUDE_DIRS}
-                    ${Boost_INCLUDE_DIRS})
-
-#include_directories(sbpl_interface/include
-include_directories(include
-                    ${catkin_INCLUDE_DIRS}
-		            ${SBPL_INCLUDE_DIRS})
-
-link_directories(${catkin_LIBRARY_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
+include_directories(
+  SYSTEM
+  include
+  ${Boost_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+  ${EIGEN_INCLUDE_DIRS}
+  ${SBPL_INCLUDE_DIRS}
+)
 link_directories(${SBPL_LIBRARY_DIRS})
 
 add_library(moveit_sbpl_arm_planner
