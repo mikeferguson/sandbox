@@ -13,7 +13,7 @@ This creates a (hopefully) cleaner interface to SBPL for n-DOF arm planning.
 
 ## Using This
 
-There are currently several repositories to checkout from source: (these same instructions should work for indigo, except you have to build and install sbpl from source as there is no ros-indigo-sbpl yet)
+There are currently several repositories to checkout from source: (these same instructions should work for indigo)
 
     sudo apt-get install ros-hydro-sbpl ros-hydro-moveit-full
     sudo apt-get install ros-hydro-gazebo-ros ros-hydro-moveit-python ros-hydro-grasping-msgs
