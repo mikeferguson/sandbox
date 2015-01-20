@@ -82,7 +82,7 @@ public:
     marker.scale.z = env->getParams().field_resolution;
     marker.lifetime = ros::Duration(0);
 
-    double max_cost = 0;
+    double max_cost = 1;  // avoid potential div/0
     for (size_t i = 0; i < states.size(); ++i)
     {
       if (states[i][3] > max_cost)
