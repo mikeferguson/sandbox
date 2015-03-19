@@ -101,6 +101,7 @@ bool SBPLPlanningContext::solve(planning_interface::MotionPlanResponse& res)
                                       sbpl_params_))
   {
     ROS_ERROR_NAMED("sbpl", "Unable to setup environment chain.");
+    res.error_code_.val = mres.error_code.val;
     return false;
   }
 
