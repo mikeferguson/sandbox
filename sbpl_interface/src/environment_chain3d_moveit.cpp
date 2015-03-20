@@ -84,6 +84,15 @@ bool EnvironmentChain3DMoveIt::setupForMotionPlan(
   tip_link_model_ = state_->getLinkModel(joint_model_group_->getLinkModelNames().back());
   params_ = params;
 
+  // Store which joints are continuous
+  const std::vector<std::string>& joint_names = joint_model_group_->getVariableNames();
+  continuous_joints_.resize(joint_names.size());
+  for (size_t j = 0; j < joint_names.size(); j++)
+  {
+    const robot_model::VariableBounds& b = joint_model_group_->getParentModel().getVariableBounds(joint_names[j]);
+    continuous_joints_[j] = !b.position_bounded_;
+  }
+
   // Local copy of current state
   std::vector<double> start_joint_values;
   moveit::core::robotStateMsgToRobotState(mreq.start_state, *state_);
@@ -422,6 +431,7 @@ int EnvironmentChain3DMoveIt::getEndEffectorHeuristic(int x, int y, int z) const
 // helper for interpolateAndCollisionCheck
 int getJointDistanceIntegerMax(const std::vector<double>& angles1,
                                const std::vector<double>& angles2,
+                               const std::vector<bool>& continuous,
                                double delta)
 {
   if (angles1.size() != angles2.size())
@@ -434,9 +444,8 @@ int getJointDistanceIntegerMax(const std::vector<double>& angles1,
   for (size_t i = 0; i < angles1.size(); i++)
   {
     int dist = floor(fabs(angles2[i]-angles1[i])/delta);
-    if (i == 4 || i == 6)
+    if (continuous[i])
     {
-      // Hack -- continuous joints TODO: make this proper
       dist = floor(fabs(angles::shortest_angular_distance(angles1[i],angles2[i]))/delta);
     }
     if (dist > max_dist)
@@ -479,7 +488,7 @@ bool EnvironmentChain3DMoveIt::interpolateAndCollisionCheck(
   rs_2->setJointGroupPositions(planning_group_, angles2);
   rs_temp->setJointGroupPositions(planning_group_, angles1);
 
-  int maximum_moves = getJointDistanceIntegerMax(angles1, angles2, params_.interpolation_distance);
+  int maximum_moves = getJointDistanceIntegerMax(angles1, angles2, continuous_joints_, params_.interpolation_distance);
 
   // Don't collision check endpoints
   for (int i = 1; i < maximum_moves-1; ++i)

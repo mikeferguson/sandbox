@@ -111,6 +111,7 @@ protected:
   std::string planning_group_;
   const robot_model::JointModelGroup* joint_model_group_;
   const robot_model::LinkModel* tip_link_model_;
+  std::vector<bool> continuous_joints_;
 
   Eigen::Affine3d goal_pose_;
   kinematic_constraints::KinematicConstraintSet* goal_constraint_set_;
